@@ -53,7 +53,8 @@ class Signal:
             self._sample = self.generate()
         return self._sample
 
-    def _sample_random(self, r, r_range):
+    @staticmethod
+    def _sample_random(r, r_range):
         return r if r_range is None else (r_range[1] - r_range[0]) * np.random.random() + r_range[0]
 
     def generate(self):
@@ -130,10 +131,10 @@ class MixedSignal:
         for signal in self.signal_objects:
             signal.generate()
         self.mixed_signal = np.sum(self._one_hots.T * self.signals, axis=0)
-        x = np.vstack((self.timestamps, self.mixed_signal)).T
+        # self._inputs = np.vstack((self.timestamps, self.mixed_signal)).T
 
         # self._inputs = x.reshape(self.n_timesteps, 2, 1)
-        self._inputs = x.reshape(self.n_timesteps, 1, 2)
+        self._inputs = self.mixed_signal.reshape(self.n_timesteps, 1, 1)
         # self._inputs = x.reshape(1, self.n_timesteps, 2)
         # self._inputs = x.reshape(self.n_timesteps, 2)
 
