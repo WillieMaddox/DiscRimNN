@@ -123,12 +123,13 @@ class MixedSignal:
         self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
 
         # self.inputs = np.vstack((self.timestamps, self.mixed_signal)).T
-        # self.inputs = x.reshape(self.n_timesteps, 2, 1)
+        # self.inputs = self.inputs.reshape(self.n_timesteps, 2, 1)
         # self.inputs = self.inputs.reshape(self.n_timesteps, 1, 2)
-        # self.inputs = x.reshape(1, self.n_timesteps, 2)
-        # self.inputs = x.reshape(self.n_timesteps, 2)
+        # self.inputs = self.inputs.reshape(1, self.n_timesteps, 2)
+        # self.inputs = self.inputs.reshape(self.n_timesteps, 2)
 
         self.inputs = self.mixed_signal.reshape(self.n_timesteps, 1, 1)
+        # self.inputs = self.mixed_signal.reshape(1, self.n_timesteps, 1)
 
         return self.inputs, self.one_hots
 
