@@ -23,12 +23,7 @@ class WaveProperty:
 
 
 class Signal:
-    def __init__(self,
-                 timestamps,
-                 offset=None,
-                 amplitude=None,
-                 period=None,
-                 phase=None):
+    def __init__(self, timestamps, offset=None, amplitude=None, period=None, phase=None):
 
         self.timestamps = timestamps
         self._sample = None
@@ -74,16 +69,21 @@ class Signal:
 
 
 class MixedSignal:
-    def __init__(self, start_time, stop_time, n_timesteps, sig_coeffs):
-        self._signals = None
+    def __init__(self, start_time, stop_time, n_timesteps, sig_coeffs, msig_coeffs=None):
+        self.signals = None
         self.inputs = None
         self.labels = None
         self.one_hots = None
         self.mixed_signal = None
+        self.mixed_signal_coeffs = msig_coeffs
         self.n_signals = len(sig_coeffs)
         self.n_timesteps = n_timesteps
 
         self.timestamps = np.linspace(start_time, stop_time, n_timesteps)
+
+        self.mixed_signal_props = {}
+        for name, coeffs in self.mixed_signal_coeffs.items():
+            self.mixed_signal_props[name] = WaveProperty(coeffs)
 
         self.signal_objects = []
         for coeffs in sig_coeffs:
@@ -95,15 +95,13 @@ class MixedSignal:
         return self.inputs, self.one_hots
 
     def __len__(self):
-        return len(self.signals)
+        return self.n_signals
 
-    @property
-    def signals(self):
-        if self._signals is None:
-            self._signals = np.empty((self.n_signals, self.n_timesteps))
-            for i, signal in enumerate(self.signal_objects):
-                self._signals[i, :] = signal()
-        return self._signals
+    def generate_property_values(self):
+        prop_vals = {}
+        for name, prop in self.mixed_signal_props.items():
+            prop_vals[name] = prop.generate()
+        return prop_vals
 
     def generate(self):
         shuffled_indexes = np.arange(self.n_timesteps)
@@ -116,18 +114,21 @@ class MixedSignal:
         labels_tup = (np.arange(self.n_timesteps), self.labels)
         self.one_hots[labels_tup] = 1
 
-        self._signals = None
-        for signal in self.signal_objects:
-            signal.generate()
+        mixed_prop_vals = self.generate_property_values()
+        self.signals = np.empty((self.n_signals, self.n_timesteps))
+        for i, signal in enumerate(self.signal_objects):
+            signal.generate(**mixed_prop_vals)
+            self.signals[i, :] = signal()
+
         self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
-        self.inputs = np.vstack((self.timestamps, self.mixed_signal)).T
 
-        # self._inputs = x.reshape(self.n_timesteps, 2, 1)
-        self.inputs = self.inputs.reshape(self.n_timesteps, 1, 2)
-        # self._inputs = x.reshape(1, self.n_timesteps, 2)
-        # self._inputs = x.reshape(self.n_timesteps, 2)
+        # self.inputs = np.vstack((self.timestamps, self.mixed_signal)).T
+        # self.inputs = x.reshape(self.n_timesteps, 2, 1)
+        # self.inputs = self.inputs.reshape(self.n_timesteps, 1, 2)
+        # self.inputs = x.reshape(1, self.n_timesteps, 2)
+        # self.inputs = x.reshape(self.n_timesteps, 2)
 
-        # self._inputs = self.mixed_signal.reshape(self.n_timesteps, 1, 1)
+        self.inputs = self.mixed_signal.reshape(self.n_timesteps, 1, 1)
 
         return self.inputs, self.one_hots
 
