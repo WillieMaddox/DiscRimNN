@@ -69,17 +69,19 @@ class Signal:
 
 
 class MixedSignal:
-    def __init__(self, start_time, stop_time, n_timesteps, sig_coeffs, msig_coeffs=None):
+    def __init__(self, start_time, stop_time, n_timestamps, n_timesteps, sig_coeffs, msig_coeffs=None):
         self.signals = None
         self.inputs = None
         self.labels = None
+        self.classes = None
         self.one_hots = None
         self.mixed_signal = None
         self.mixed_signal_coeffs = msig_coeffs
         self.n_signals = len(sig_coeffs)
+        self.n_timestamps = n_timestamps
         self.n_timesteps = n_timesteps
-
-        self.timestamps = np.linspace(start_time, stop_time, n_timesteps)
+        self.n_samples = self.n_timestamps - (self.n_timesteps - 1)
+        self.timestamps = np.linspace(start_time, stop_time, n_timestamps)
 
         self.mixed_signal_props = {}
         for name, coeffs in self.mixed_signal_coeffs.items():
@@ -90,9 +92,9 @@ class MixedSignal:
             self.signal_objects.append(Signal(self.timestamps, **coeffs))
 
     def __call__(self):
-        if self.inputs is None or self.one_hots is None:
+        if self.inputs is None or self.labels is None:
             self.generate()
-        return self.inputs, self.one_hots
+        return self.inputs, self.labels
 
     def __len__(self):
         return self.n_signals
@@ -104,18 +106,18 @@ class MixedSignal:
         return prop_vals
 
     def generate(self):
-        shuffled_indexes = np.arange(self.n_timesteps)
+        shuffled_indexes = np.arange(self.n_timestamps)
         np.random.shuffle(shuffled_indexes)
-        self.labels = np.zeros(self.n_timesteps, dtype=int)
+        self.classes = np.zeros(self.n_timestamps, dtype=int)
         for s in range(self.n_signals):
-            self.labels[np.where(shuffled_indexes < s * self.n_timesteps // self.n_signals)] += 1
+            self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
 
-        self.one_hots = np.zeros((self.n_timesteps, self.n_signals), dtype=float)
-        labels_tup = (np.arange(self.n_timesteps), self.labels)
-        self.one_hots[labels_tup] = 1
+        self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
+        classes_tup = (np.arange(self.n_timestamps), self.classes)
+        self.one_hots[classes_tup] = 1
 
         mixed_prop_vals = self.generate_property_values()
-        self.signals = np.empty((self.n_signals, self.n_timesteps))
+        self.signals = np.empty((self.n_signals, self.n_timestamps))
         for i, signal in enumerate(self.signal_objects):
             signal.generate(**mixed_prop_vals)
             self.signals[i, :] = signal()
@@ -128,10 +130,16 @@ class MixedSignal:
         # self.inputs = self.inputs.reshape(1, self.n_timesteps, 2)
         # self.inputs = self.inputs.reshape(self.n_timesteps, 2)
 
-        self.inputs = self.mixed_signal.reshape(self.n_timesteps, 1, 1)
+        # self.inputs = self.mixed_signal.reshape(self.n_timestamps, 1, 1)
         # self.inputs = self.mixed_signal.reshape(1, self.n_timesteps, 1)
 
-        return self.inputs, self.one_hots
+        mixed_signal = np.zeros((self.n_samples, self.n_timesteps))
+        for i in range(self.n_timesteps):
+            mixed_signal[:, i] = self.mixed_signal[i:i+self.n_samples]
+        self.inputs = mixed_signal.reshape(self.n_samples, self.n_timesteps, 1)
+        # self.labels = self.one_hots.reshape(n_samples, self.n_timesteps, self.n_signals)
+        self.labels = self.one_hots[(self.n_timesteps - 1):]
+        return self.inputs, self.labels
 
     def generate_batch(self, batch_size):
         x_batch = np.empty((batch_size, *self.inputs.shape))
