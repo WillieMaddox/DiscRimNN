@@ -1,6 +1,60 @@
 import numpy as np
 
 
+class BaseNoise(object):
+    def reset(self):
+        pass
+
+
+class UniformNoise(BaseNoise):
+    def __init__(self, mu=0.0, sigma=0.01):
+        self.mu = mu
+        self.sigma = sigma
+
+    def __call__(self):
+        return np.random.normal(self.mu, self.sigma)
+
+    def __repr__(self):
+        return 'UniformNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
+
+
+class NormalNoise(BaseNoise):
+    def __init__(self, mu=0.0, sigma=0.01):
+        self.mu = mu
+        self.sigma = sigma
+
+    def __call__(self):
+        return np.random.normal(self.mu, self.sigma)
+
+    def __repr__(self):
+        return 'NormalNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
+
+
+class OUNoise(BaseNoise):
+    """Ornstein-Uhlenbeck process."""
+
+    def __init__(self, size, mu=None, theta=0.15, sigma=0.2):
+        """Initialize parameters and noise process."""
+        if isinstance(mu, np.ndarray):
+            assert mu.shape[0] == size
+        self.size = size
+        self.mu = mu if mu is not None else np.zeros(self.size)
+        self.theta = theta
+        self.sigma = sigma
+        self.state = np.ones(self.size) * self.mu
+
+    def reset(self):
+        """Reset the internal state (= noise) to mean (mu)."""
+        self.state = self.mu
+
+    def sample(self):
+        """Update internal state and return it as a noise sample."""
+        x = self.state
+        dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
+        self.state = x + dx
+        return self.state
+
+
 class WaveProperty:
     def __init__(self, kwargs):
         assert 'mean' in kwargs
@@ -69,22 +123,21 @@ class Signal:
 
 
 class MixedSignal:
-    def __init__(self, start_time, stop_time, n_timestamps, n_timesteps, sig_coeffs, msig_coeffs=None):
+    def __init__(self, time_coeffs, sig_coeffs, msig_coeffs=None):
         self.signals = None
         self.inputs = None
         self.labels = None
         self.classes = None
         self.one_hots = None
         self.mixed_signal = None
-        self.mixed_signal_coeffs = msig_coeffs
+        self.n_timestamps = time_coeffs['n_timestamps']
+        self.n_timesteps = time_coeffs['n_timesteps']
         self.n_signals = len(sig_coeffs)
-        self.n_timestamps = n_timestamps
-        self.n_timesteps = n_timesteps
         self.n_samples = self.n_timestamps - (self.n_timesteps - 1)
-        self.timestamps = np.linspace(start_time, stop_time, n_timestamps)
+        self.timestamps = np.linspace(time_coeffs['start'], time_coeffs['stop'], self.n_timestamps)
 
         self.mixed_signal_props = {}
-        for name, coeffs in self.mixed_signal_coeffs.items():
+        for name, coeffs in msig_coeffs.items():
             self.mixed_signal_props[name] = WaveProperty(coeffs)
 
         self.signal_objects = []
