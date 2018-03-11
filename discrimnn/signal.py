@@ -29,22 +29,22 @@ class Signal:
         self._sample = None
 
         offset = {} if offset is None else offset
-        if 'mean' not in offset:
+        if 'mean' not in offset or offset['mean'] is None:
             offset['mean'] = 0
         self.offset = WaveProperty(offset)
 
         amplitude = {} if amplitude is None else amplitude
-        if 'mean' not in amplitude:
+        if 'mean' not in amplitude or amplitude['mean'] is None:
             amplitude['mean'] = 1
         self.amplitude = WaveProperty(amplitude)
 
         period = {} if period is None else period
-        if 'mean' not in period:
+        if 'mean' not in period or period['mean'] is None:
             period['mean'] = 1
         self.period = WaveProperty(period)
 
         phase = {} if phase is None else phase
-        if 'mean' not in phase:
+        if 'mean' not in phase or phase['mean'] is None:
             phase['mean'] = 0
         self.phase = WaveProperty(phase)
 
