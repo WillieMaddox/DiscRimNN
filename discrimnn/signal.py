@@ -83,8 +83,8 @@ class MixedSignal:
         self.timestamps = np.linspace(time_coeffs['start'], time_coeffs['stop'], self.n_timestamps)
 
         self.mixed_signal_props = {}
-        for name, coeffs in msig_coeffs.items():
-            self.mixed_signal_props[name] = WaveProperty(coeffs)
+        for prop_name, coeffs in msig_coeffs.items():
+            self.mixed_signal_props[prop_name] = WaveProperty(coeffs)
 
         self.signal_objects = []
         for coeffs in sig_coeffs:
@@ -110,10 +110,8 @@ class MixedSignal:
         self.classes = np.zeros(self.n_timestamps, dtype=int)
         for s in range(self.n_signals):
             self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
-
         self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
-        classes_tup = (np.arange(self.n_timestamps), self.classes)
-        self.one_hots[classes_tup] = 1
+        self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
 
         mixed_prop_vals = self.generate_property_values()
         self.signals = np.empty((self.n_signals, self.n_timestamps))
