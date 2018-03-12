@@ -1,4 +1,8 @@
+import os
+import sys
+import json
 import string
+import random
 import numpy as np
 
 
@@ -61,6 +65,7 @@ class Signal:
 
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
+
     def __call__(self):
         return self.sample
 
@@ -82,17 +87,24 @@ class Signal:
 
 
 class MixedSignal:
-    def __init__(self, time_coeffs, sig_coeffs, msig_coeffs=None):
+    def __init__(self, time_coeffs, sig_coeffs, msig_coeffs=None, run_label='__default__', method='sliding'):
         self.signals = None
         self.inputs = None
         self.labels = None
         self.classes = None
         self.one_hots = None
         self.mixed_signal = None
+        self.time_coeffs = time_coeffs
+        self.sig_coeffs = sig_coeffs
+        self.msig_coeffs = msig_coeffs
+        self.run_label = run_label
+        self.name = 'Mixed'
+        self.method = method
         self.n_timestamps = time_coeffs['n_timestamps']
         self.n_timesteps = time_coeffs['n_timesteps']
+        if method == 'boxcar':
+            assert self.n_timestamps % self.n_timesteps == 0
         self.n_signals = len(sig_coeffs)
-        self.n_samples = self.n_timestamps - (self.n_timesteps - 1)
         self.timestamps = np.linspace(time_coeffs['start'], time_coeffs['stop'], self.n_timestamps)
 
         self.mixed_signal_props = {}
@@ -103,6 +115,8 @@ class MixedSignal:
         for coeffs in sig_coeffs:
             self.signal_objects.append(Signal(self.timestamps, **coeffs))
 
+        self.out_dir = os.path.join(os.getcwd(), 'out', self.run_label)
+        os.makedirs(self.out_dir, exist_ok=True)
 
     def __len__(self):
         return self.n_signals
@@ -114,6 +128,15 @@ class MixedSignal:
         return prop_vals
 
     def generate(self):
+        self._generate()
+        if self.method == 'sliding':
+            return self.generate_sliding()
+        elif self.method == 'boxcar':
+            return self.generate_boxcar()
+        else:
+            raise ValueError('improper method: {}. Use "sliding" or "boxcar"')
+
+    def _generate(self):
         shuffled_indexes = np.arange(self.n_timestamps)
         np.random.shuffle(shuffled_indexes)
         self.classes = np.zeros(self.n_timestamps, dtype=int)
@@ -139,12 +162,21 @@ class MixedSignal:
         # self.inputs = self.mixed_signal.reshape(self.n_timestamps, 1, 1)
         # self.inputs = self.mixed_signal.reshape(1, self.n_timesteps, 1)
 
-        mixed_signal = np.zeros((self.n_samples, self.n_timesteps))
+    def generate_sliding(self):
+        n_samples = self.n_timestamps - (self.n_timesteps - 1)
+        mixed_signal = np.zeros((n_samples, self.n_timesteps))
         for i in range(self.n_timesteps):
-            mixed_signal[:, i] = self.mixed_signal[i:i+self.n_samples]
-        self.inputs = mixed_signal.reshape(self.n_samples, self.n_timesteps, 1)
-        # self.labels = self.one_hots.reshape(n_samples, self.n_timesteps, self.n_signals)
+            mixed_signal[:, i] = self.mixed_signal[i:i+n_samples]
+        self.inputs = mixed_signal.reshape(n_samples, self.n_timesteps, 1)
         self.labels = self.one_hots[(self.n_timesteps - 1):]
+        return self.inputs, self.labels
+
+    def generate_boxcar(self):
+        n_samples = self.n_timestamps // self.n_timesteps
+        self.inputs = self.mixed_signal.reshape((n_samples, self.n_timesteps, 1))
+        labels = self.one_hots.reshape((n_samples, self.n_timesteps, self.n_signals))
+        labels = labels[:, -1, :]
+        self.labels = labels.reshape(n_samples, self.n_signals)
         return self.inputs, self.labels
 
     def generate_batch(self, batch_size):
@@ -155,3 +187,15 @@ class MixedSignal:
             x_batch[i] = x
             y_batch[i] = y
         return x_batch, y_batch
+
+    def save_config(self):
+        config_dict = {
+            'run_label': self.run_label,
+            'method': self.method,
+            'time_coeffs': self.time_coeffs,
+            'sig_coeffs': self.sig_coeffs,
+            'msig_coeffs': self.msig_coeffs
+        }
+        filename = os.path.join(self.out_dir, 'signal_config.json')
+        with open(filename, 'w') as ofs:
+            json.dump(config_dict, ofs, indent=4)
