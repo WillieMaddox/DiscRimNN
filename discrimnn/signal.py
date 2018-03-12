@@ -90,10 +90,6 @@ class MixedSignal:
         for coeffs in sig_coeffs:
             self.signal_objects.append(Signal(self.timestamps, **coeffs))
 
-    def __call__(self):
-        if self.inputs is None or self.labels is None:
-            self.generate()
-        return self.inputs, self.labels
 
     def __len__(self):
         return self.n_signals
