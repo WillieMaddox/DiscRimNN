@@ -70,12 +70,12 @@ class Signal:
             self._sample = self.generate()
         return self._sample
 
-    def generate(self, offset=None, amplitude=None, period=None, phase=None):
+    def generate(self, offset=0, amplitude=0, period=0, phase=0):
 
-        offset = self.offset.generate() if offset is None else offset
-        amplitude = self.amplitude.generate() if amplitude is None else amplitude
-        period = self.period.generate() if period is None else period
-        phase = self.phase.generate() if phase is None else phase
+        offset = self.offset.generate() + offset
+        amplitude = self.amplitude.generate() + amplitude
+        period = self.period.generate() + period
+        phase = self.phase.generate() + phase
 
         self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps / period - phase)
         return self._sample
