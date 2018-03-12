@@ -34,7 +34,7 @@ class WaveProperty:
 
 
 class Signal:
-    def __init__(self, timestamps, offset=None, amplitude=None, period=None, phase=None):
+    def __init__(self, timestamps, offset=None, amplitude=None, period=None, phase=None, name=None, color=None):
 
         self.timestamps = timestamps
         self._sample = None
@@ -59,6 +59,8 @@ class Signal:
             phase['mean'] = 0
         self.phase = WaveProperty(phase)
 
+        self.name = name_generator() if name is None else name
+        self.color = color_generator() if color is None else color
     def __call__(self):
         return self.sample
 
