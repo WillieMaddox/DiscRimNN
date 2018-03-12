@@ -1,0 +1,82 @@
+{
+    "run_label": "phase_010",
+    "method": "sliding",
+    "time_coeffs": {
+        "start": 0,
+        "stop": 75,
+        "n_timestamps": 301,
+        "n_timesteps": 10
+    },
+    "sig_coeffs": [
+        {
+            "amplitude": {
+                "mean": 1.0,
+                "delta": 0
+            },
+            "offset": {
+                "mean": -0.5,
+                "delta": 0
+            },
+            "period": {
+                "mean": 1,
+                "delta": 0
+            },
+            "phase": {
+                "mean": 0,
+                "delta": 0
+            },
+            "name": "A",
+            "color": "#ff0000"
+        },
+        {
+            "amplitude": {
+                "mean": 1.0,
+                "delta": 0
+            },
+            "offset": {
+                "mean": 0.0,
+                "delta": 0
+            },
+            "period": {
+                "mean": 1,
+                "delta": 0
+            },
+            "phase": {
+                "mean": 3.141592653589793,
+                "delta": 0
+            },
+            "name": "B",
+            "color": "#00ff00"
+        },
+        {
+            "amplitude": {
+                "mean": 1.0,
+                "delta": 0
+            },
+            "offset": {
+                "mean": 0.5,
+                "delta": 0
+            },
+            "period": {
+                "mean": 1,
+                "delta": 0
+            },
+            "phase": {
+                "mean": 0,
+                "delta": 0
+            },
+            "name": "C",
+            "color": "#0000ff"
+        }
+    ],
+    "msig_coeffs": {
+        "phase": {
+            "mean": 0,
+            "delta": 3.141592653589793
+        },
+        "period": {
+            "mean": 25,
+            "delta": 0
+        }
+    }
+}
