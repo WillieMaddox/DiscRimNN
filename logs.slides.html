@@ -15,8 +15,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <!-- General and theme style sheets -->
-<link rel="stylesheet" href="/home/maddoxw/git/reveal.js/css/reveal.css">
-<link rel="stylesheet" href="/home/maddoxw/git/reveal.js/css/theme/simple.css" id="theme">
+<link rel="stylesheet" href="repos\jupyter2slides\static\reveal.js-3.1.0\js/css/reveal.css">
+<link rel="stylesheet" href="repos\jupyter2slides\static\reveal.js-3.1.0\js/css/theme/simple.css" id="theme">
 
 <!-- If the query includes 'print-pdf', include the PDF print sheet -->
 <script>
@@ -24,14 +24,14 @@ if( window.location.search.match( /print-pdf/gi ) ) {
         var link = document.createElement( 'link' );
         link.rel = 'stylesheet';
         link.type = 'text/css';
-        link.href = '/home/maddoxw/git/reveal.js/css/print/pdf.css';
+        link.href = 'repos\jupyter2slides\static\reveal.js-3.1.0\js/css/print/pdf.css';
         document.getElementsByTagName( 'head' )[0].appendChild( link );
 }
 
 </script>
 
 <!--[if lt IE 9]>
-<script src="/home/maddoxw/git/reveal.js/lib/js/html5shiv.js"></script>
+<script src="repos\jupyter2slides\static\reveal.js-3.1.0\js/lib/js/html5shiv.js"></script>
 <![endif]-->
 
 <!-- Loading the mathjax macro -->
@@ -11998,29 +11998,15 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Next-define-the-RNN">Next define the RNN<a class="anchor-link" href="#Next-define-the-RNN">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">n_neurons</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="n">n_timesteps</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">LSTM</span><span class="p">(</span><span class="n">n_neurons</span><span class="p">,</span> <span class="n">batch_input_shape</span><span class="o">=</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">stateful</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">LSTM</span><span class="p">(</span><span class="n">n_neurons</span><span class="p">,</span> <span class="n">stateful</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<h2 id="Next-define-the-RNN">Next define the RNN<a class="anchor-link" href="#Next-define-the-RNN">&#182;</a></h2><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">LSTM</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">batch_input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">stateful</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">return_sequences</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">LSTM</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">stateful</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="n">n_signals</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s1">&#39;softmax&#39;</span><span class="p">))</span>
 <span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="s1">&#39;categorical_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;rmsprop&#39;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">])</span>
 </pre></div>
 
 </div>
 </div>
-</div>
-
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
@@ -12035,7 +12021,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Now-train-the-model">Now train the model<a class="anchor-link" href="#Now-train-the-model">&#182;</a></h1>
+<h2 id="Now-train-the-model">Now train the model<a class="anchor-link" href="#Now-train-the-model">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -12061,7 +12047,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Results-(training-loss-and-training-accuracy)">Results (training loss and training accuracy)<a class="anchor-link" href="#Results-(training-loss-and-training-accuracy)">&#182;</a></h1><p><img src="out/offset_30/loss_acc.png" width="1000"></p>
+<h2 id="Results-(training-loss-and-training-accuracy)">Results (training loss and training accuracy)<a class="anchor-link" href="#Results-(training-loss-and-training-accuracy)">&#182;</a></h2><p><img src="out/offset_30/loss_acc.png" width="1000"></p>
 
 </div>
 </div>
@@ -12070,7 +12056,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Colored-predictions">Colored predictions<a class="anchor-link" href="#Colored-predictions">&#182;</a></h1><p><img src="out/offset_30/eval_pred.png" width="1000"></p>
+<h2 id="Colored-predictions">Colored predictions<a class="anchor-link" href="#Colored-predictions">&#182;</a></h2><p><img src="out/offset_30/eval_pred.png" width="1000"></p>
 
 </div>
 </div>
@@ -12079,15 +12065,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Offset-(-0.5,-0,-0.5)">Offset (-0.5, 0, 0.5)<a class="anchor-link" href="#Offset-(-0.5,-0,-0.5)">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="out/offset_050/signals.png" width="1000">
+<h1 id="Offset-(-0.5,-0,-0.5)">Offset (-0.5, 0, 0.5)<a class="anchor-link" href="#Offset-(-0.5,-0,-0.5)">&#182;</a></h1><p><img src="out/offset_050/signals.png" width="1000">
 <img src="out/offset_050/mixedsignal.png" width="1000">
 <img src="out/offset_050/mixedsignal_with_truth.png" width="1000"></p>
 
@@ -12098,15 +12076,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Results">Results<a class="anchor-link" href="#Results">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="out/offset_050/loss_acc.png" width="1000">
+<h1 id="Offset-(-0.5,-0,-0.5)---Results">Offset (-0.5, 0, 0.5) - Results<a class="anchor-link" href="#Offset-(-0.5,-0,-0.5)---Results">&#182;</a></h1><p><img src="out/offset_050/loss_acc.png" width="1000">
 <img src="out/offset_050/eval_pred.png" width="1000"></p>
 
 </div>
@@ -12116,15 +12086,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Offset-(-0.1,-0,-0.1)">Offset (-0.1, 0, 0.1)<a class="anchor-link" href="#Offset-(-0.1,-0,-0.1)">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="out/offset_010/signals.png" width="1000"></p>
+<h1 id="Offset-(-0.1,-0,-0.1)">Offset (-0.1, 0, 0.1)<a class="anchor-link" href="#Offset-(-0.1,-0,-0.1)">&#182;</a></h1><p><img src="out/offset_010/signals.png" width="1000"></p>
 <p><img src="out/offset_010/mixedsignal.png" width="1000"></p>
 <p><img src="out/offset_010/mixedsignal_with_truth.png" width="1000"></p>
 
@@ -12135,15 +12097,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Results">Results<a class="anchor-link" href="#Results">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="out/offset_010/loss_acc.png" width="1000">
+<h1 id="Offset-(-0.1,-0,-0.1)---Results">Offset (-0.1, 0, 0.1) - Results<a class="anchor-link" href="#Offset-(-0.1,-0,-0.1)---Results">&#182;</a></h1><p><img src="out/offset_010/loss_acc.png" width="1000">
 <img src="out/offset_010/eval_pred.png" width="1000"></p>
 
 </div>
@@ -12153,15 +12107,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Phase-(0,-$\pi$,-0)">Phase (0, $\pi$, 0)<a class="anchor-link" href="#Phase-(0,-$\pi$,-0)">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="out/phase_010/signals.png" width="1000">
+<h1 id="Phase-(0,-$\pi$,-0)">Phase (0, $\pi$, 0)<a class="anchor-link" href="#Phase-(0,-$\pi$,-0)">&#182;</a></h1><p><img src="out/phase_010/signals.png" width="1000">
 <img src="out/phase_010/mixedsignal.png" width="1000">
 <img src="out/phase_010/mixedsignal_with_truth.png" width="1000"></p>
 
@@ -12172,15 +12118,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Results">Results<a class="anchor-link" href="#Results">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="out/phase_010/loss_acc.png" width="1000">
+<h1 id="Phase-(0,-$\pi$,-0)---Results">Phase (0, $\pi$, 0) - Results<a class="anchor-link" href="#Phase-(0,-$\pi$,-0)---Results">&#182;</a></h1><p><img src="out/phase_010/loss_acc.png" width="1000">
 <img src="out/phase_010/eval_pred.png" width="1000"></p>
 
 </div>
@@ -12233,8 +12171,8 @@ require(
       waitSeconds: 15
     },
     [
-      "/home/maddoxw/git/reveal.js/lib/js/head.min.js",
-      "/home/maddoxw/git/reveal.js/js/reveal.js"
+      "repos\jupyter2slides\static\reveal.js-3.1.0\js/lib/js/head.min.js",
+      "repos\jupyter2slides\static\reveal.js-3.1.0\js/js/reveal.js"
     ],
 
     function(head, Reveal){
@@ -12249,9 +12187,9 @@ require(
 
             // Optional libraries used to extend on reveal.js
             dependencies: [
-                { src: "/home/maddoxw/git/reveal.js/lib/js/classList.js",
+                { src: "repos\jupyter2slides\static\reveal.js-3.1.0\js/lib/js/classList.js",
                   condition: function() { return !document.body.classList; } },
-                { src: "/home/maddoxw/git/reveal.js/plugin/notes/notes.js",
+                { src: "repos\jupyter2slides\static\reveal.js-3.1.0\js/plugin/notes/notes.js",
                   async: true,
                   condition: function() { return !!document.body.classList; } }
             ]
