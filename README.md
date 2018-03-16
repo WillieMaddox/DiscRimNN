@@ -1,2 +1,2 @@
-# DiscRimNN
-An RNN that can discriminate between two or more noisy signals.
+# MixSig
+An RNN that can tell the difference between two or more signals.
