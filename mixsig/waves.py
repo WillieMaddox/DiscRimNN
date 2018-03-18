@@ -18,11 +18,6 @@ class WaveProperty:
         self.delta = 0.0 if delta is None else float(delta)
         self._value = None
 
-    # def __init__(self, kwargs):
-    #     kwargs = {} if kwargs is None else kwargs
-    #     self.mean = kwargs['mean'] if 'mean' in kwargs else 0
-    #     self.delta = kwargs['delta'] if 'delta' in kwargs else 0
-
     def __call__(self):
         return self.value
 
