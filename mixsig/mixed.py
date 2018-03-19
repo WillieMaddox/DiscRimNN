@@ -1,14 +1,17 @@
 import os
-import sys
 import json
-import string
-import random
 import numpy as np
 from .waves import Wave, WaveProperty
 
 
 class MixedSignal:
-    def __init__(self, time_coeffs, sig_coeffs, msig_coeffs=None, run_label='__default__', method='sliding'):
+    def __init__(self,
+                 time_coeffs,
+                 sig_coeffs,
+                 msig_coeffs=None,
+                 run_label='__default__',
+                 method='sliding'):
+
         self.signals = None
         self.inputs = None
         self.labels = None

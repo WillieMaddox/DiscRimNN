@@ -38,13 +38,6 @@ def test_waveproperty_generator(wp):
         assert value1 == value2, f'{wp.mean} {wp.delta}'
 
 
-# @given(st.dictionaries(st.text()))
-# @given(st.dictionaries(keys=('mean', 'delta'), values=st.floats()))
-# def test_waveproperty(params):
-#     waveproperty = WaveProperty(**params)
-#     assert isinstance(waveproperty(), float)
-
-
 def test_wave_null():
     wave = Wave()
     assert wave.amplitude == 0
