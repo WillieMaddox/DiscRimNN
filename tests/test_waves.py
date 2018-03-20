@@ -1,6 +1,5 @@
 import pytest
 from hypothesis import given
-from hypothesis import assume
 from hypothesis import example
 from hypothesis import strategies as st
 from mixsig.waves import Wave, WaveProperty

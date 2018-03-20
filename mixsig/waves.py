@@ -79,6 +79,7 @@ class Wave:
         return self._sample
 
     def generate(self, offset=0, amplitude=0, period=0, phase=0):
+
         amplitude = self.amplitude.generate() + amplitude
         period = self.period.generate() + period
         offset = self.offset.generate() + offset
