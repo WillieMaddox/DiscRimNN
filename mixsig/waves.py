@@ -1,5 +1,8 @@
 import string
 import numpy as np
+from .noise import NoNoise
+from .noise import NormalNoise
+from .noise import UniformNoise
 from .utils import name_generator
 from .utils import color_generator
 
@@ -28,7 +31,15 @@ class WaveProperty:
 
 
 class Wave:
-    def __init__(self, timestamps=None, amplitude=None, period=None, offset=None, phase=None, name=None, color=None):
+    def __init__(self,
+                 timestamps,
+                 amplitude=None,
+                 period=None,
+                 offset=None,
+                 phase=None,
+                 noise=None,
+                 color=None,
+                 name=None):
 
         self.timestamps = timestamps
         self._sample = None
@@ -41,6 +52,14 @@ class Wave:
         self._offset = WaveProperty(**offset)
         phase = {} if phase is None else phase
         self._phase = WaveProperty(**phase)
+
+        noise = {} if noise is None else noise
+        if 'uniform' in noise:
+            self._noise = UniformNoise(**noise['uniform'])
+        elif 'normal' in noise:
+            self._noise = NormalNoise(**noise['normal'])
+        else:
+            self._noise = NoNoise()
 
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
@@ -62,9 +81,13 @@ class Wave:
         return self._phase()
 
     @property
+    def noise(self):
+        return self._noise()
+
     def __call__(self):
         return self.sample
 
+    @property
     def sample(self):
         if self._sample is None:
             self._sample = self.generate()
@@ -72,12 +95,14 @@ class Wave:
 
     def generate(self, offset=0, amplitude=0, period=0, phase=0):
 
-        amplitude = self.amplitude.generate() + amplitude
-        period = self.period.generate() + period
-        offset = self.offset.generate() + offset
-        phase = self.phase.generate() + phase
+        amplitude = self._amplitude.generate() + amplitude
+        period = self._period.generate() + period
+        offset = self._offset.generate() + offset
+        phase = self._phase.generate() + phase
 
-        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps / period - phase)
+        noise = self._noise.generate()
+
+        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps() / period - phase) + noise
         return self._sample
 
 

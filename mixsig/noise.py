@@ -76,6 +76,30 @@ class NormalNoise:
         return 'NormalNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
 
 
+class NoNoise:
+    def __init__(self):
+        self._value = None
+
+    def __call__(self):
+        return self.value
+
+    @property
+    def value(self):
+        if self._value is None:
+            self._generate()
+        return self._value
+
+    def generate(self, n_timestamps=None):
+        self._generate()
+        return self._value
+
+    def _generate(self):
+        self._value = 0
+
+    def __repr__(self):
+        return 'NoNoise()'
+
+
 class OUNoise:
     """Ornstein-Uhlenbeck process."""
 

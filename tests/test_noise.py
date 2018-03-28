@@ -45,10 +45,6 @@ def test_uniform_noise_with_no_size():
 st_ounoise_kwargs = st.fixed_dictionaries(
     dict(
         n_signals=st.integers(min_value=1, max_value=20),
-        # n_timestamps=st.one_of(
-        #     st.none(),
-        #     st.integers(min_value=2, max_value=20000)
-        # ),
         n_timestamps=st.integers(min_value=2, max_value=20000),
         mu=st.one_of(
             st.none(),
