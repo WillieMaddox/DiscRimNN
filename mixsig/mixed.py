@@ -1,7 +1,9 @@
 import os
 import json
 import numpy as np
+from .timesequence import TimeSequence
 from .waves import Wave, WaveProperty
+from .noise import OUNoise
 
 
 class MixedSignal:
@@ -9,31 +11,41 @@ class MixedSignal:
                  time_coeffs,
                  sig_coeffs,
                  msig_coeffs=None,
+                 n_timesteps=1,
                  run_label='default',
                  method='sliding'):
 
-        self.signals = None
+        self._signals = None
+        self._signal_names = None
+        self._signal_colors = None
         self.inputs = None
         self.labels = None
         self.classes = None
         self.one_hots = None
         self.mixed_signal = None
+
+        self.timestamps = TimeSequence(**time_coeffs)
+        self.n_timestamps = len(self.timestamps)
+        self.n_timesteps = n_timesteps
+
         self.name = 'Mixed'
         self.method = method
-        self.n_timestamps = time_coeffs['n_timestamps']
-        self.n_timesteps = time_coeffs['n_timesteps']
         if method == 'boxcar':
             assert self.n_timestamps % self.n_timesteps == 0
-        self.n_signals = len(sig_coeffs)
-        self.timestamps = np.linspace(time_coeffs['start'], time_coeffs['stop'], self.n_timestamps)
 
         self.mixed_signal_props = {}
         for prop_name, coeffs in msig_coeffs.items():
-            self.mixed_signal_props[prop_name] = WaveProperty(coeffs)
+            self.mixed_signal_props[prop_name] = WaveProperty(**coeffs)
 
         self.signal_objects = []
-        for coeffs in sig_coeffs:
-            self.signal_objects.append(Wave(self.timestamps, **coeffs))
+        for sig, coeffs in sig_coeffs.items():
+            if sig == 'waves':
+                for c in coeffs:
+                    self.signal_objects.append(Wave(self.timestamps, **c))
+            elif sig == 'noise':
+                self.signal_objects.append(OUNoise(self.n_timestamps, **coeffs))
+
+        self.n_signals = len(self.signals)
 
         self.config_dict = {
             'run_label': run_label,
@@ -46,8 +58,28 @@ class MixedSignal:
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
         os.makedirs(self.out_dir, exist_ok=True)
 
-    def __len__(self):
-        return self.n_signals
+    @property
+    def signals(self):
+        if self._signals is None:
+            self.generate_signals()
+        return self._signals
+
+    def generate_signals(self):
+        self.timestamps.generate()
+        props = self.generate_property_values()
+        self._signals = np.vstack([sig.generate(**props) for sig in self.signal_objects])
+
+    @property
+    def signal_names(self):
+        if self._signal_names is None:
+            self._signal_names = np.hstack([sig.name for sig in self.signal_objects])
+        return self._signal_names
+
+    @property
+    def signal_colors(self):
+        if self._signal_colors is None:
+            self._signal_colors = np.hstack([sig.color for sig in self.signal_objects])
+        return self._signal_colors
 
     def generate_property_values(self):
         prop_vals = {}
@@ -58,11 +90,12 @@ class MixedSignal:
     def generate(self):
         self._generate()
         if self.method == 'sliding':
-            return self.generate_sliding()
+            self.generate_sliding()
         elif self.method == 'boxcar':
-            return self.generate_boxcar()
+            self.generate_boxcar()
         else:
             raise ValueError('improper method: {}. Use "sliding" or "boxcar"')
+        return self.inputs, self.labels
 
     def _generate(self):
         shuffled_indexes = np.arange(self.n_timestamps)
@@ -70,16 +103,13 @@ class MixedSignal:
         self.classes = np.zeros(self.n_timestamps, dtype=int)
         for s in range(self.n_signals):
             self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
+
         self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
         self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
 
-        mixed_prop_vals = self.generate_property_values()
-        signals = np.empty((self.n_signals, self.n_timestamps))
-        for i, signal in enumerate(self.signal_objects):
-            signal.generate(**mixed_prop_vals)
-            signals[i, :] = signal()
+        self.generate_signals()
 
-        self.mixed_signal = np.sum(self.one_hots.T * signals, axis=0)
+        self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
 
         # self.inputs = np.vstack((self.timestamps, self.mixed_signal)).T
         # self.inputs = self.inputs.reshape(self.n_timesteps, 2, 1)
