@@ -45,9 +45,6 @@ class Wave:
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
 
-    def __call__(self):
-        return self.sample
-
     @property
     def amplitude(self):
         return self._amplitude()
@@ -65,6 +62,9 @@ class Wave:
         return self._phase()
 
     @property
+    def __call__(self):
+        return self.sample
+
     def sample(self):
         if self._sample is None:
             self._sample = self.generate()

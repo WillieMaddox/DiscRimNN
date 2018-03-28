@@ -3,21 +3,10 @@ import numpy as np
 
 class TimeSequence:
     """
-    start
-    stop
-    n_timestamps
-    dt
-
     dt_delta - optional
     subsequence_length - MixedSignal only
     """
     def __init__(self, start, stop, n_timestamps, delta=None):
-
-        # nones_counter = 0
-        # for kw in (start, stop, n_timestamps, dt):
-        #     if kw is None:
-        #         nones_counter += 1
-        # assert nones_counter == 1
 
         self.start = start
         self.stop = stop

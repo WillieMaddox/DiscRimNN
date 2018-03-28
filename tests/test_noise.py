@@ -29,7 +29,7 @@ st_ounoise_kwargs = st.fixed_dictionaries(
 @given(st_ounoise_kwargs)
 @example(kwargs={'n_signals': 1, 'n_timestamps': 30, 'mu': 0.0})
 @example(kwargs={'n_signals': 2, 'n_timestamps': 30, 'mu': 0.0})
-def test_ounoise_inputs(kwargs):
+def test_ou_noise_inputs(kwargs):
     noise = OUNoise(**kwargs)
     assert noise().shape == (noise.n_signals, noise.n_timestamps)
     assert noise.signals.shape == (noise.n_signals, noise.n_timestamps)
@@ -42,7 +42,7 @@ def test_ounoise_inputs(kwargs):
 @example(kwargs={'n_signals': 1, 'n_timestamps': 30, 'mu': np.random.randn(1)})
 @example(kwargs={'n_signals': 2, 'n_timestamps': 30, 'mu': np.random.randn(2)})
 @example(kwargs={'n_signals': 10, 'n_timestamps': 30, 'mu': np.random.randn(10)})
-def test_ounoise_mu_as_numpy_array(kwargs):
+def test_ou_noise_mu_as_numpy_array(kwargs):
     noise = OUNoise(**kwargs)
     assert np.all(noise.state == noise.mu)
     noise.generate(n_timestamps=50)
@@ -72,7 +72,7 @@ ounoise = st.builds(
 @example(OUNoise(n_signals=1, n_timestamps=30, mu=0.0))
 @example(OUNoise(n_signals=2, n_timestamps=30, mu=np.random.randn(2)))
 @example(OUNoise(n_signals=5, n_timestamps=30, mu=0.0))
-def test_ounoise_generator(noise):
+def test_ou_noise_generator(noise):
     assert noise.signals.shape == (noise.n_signals, noise.n_timestamps)
     noise.generate(n_timestamps=50)
     assert noise.signals.shape == (noise.n_signals, noise.n_timestamps)
@@ -81,7 +81,7 @@ def test_ounoise_generator(noise):
 @given(st_ounoise_kwargs)
 @example(kwargs={'n_signals': 1, 'n_timestamps': 30, 'mu': 0.0})
 @example(kwargs={'n_signals': 2, 'n_timestamps': 30, 'mu': 0.0})
-def test_ounoise_reset(kwargs):
+def test_ou_noise_reset(kwargs):
     noise = OUNoise(**kwargs)
     assert np.all(noise.state == noise.mu)
     noise.generate(n_timestamps=50, reset=True)

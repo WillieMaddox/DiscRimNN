@@ -1,4 +1,6 @@
 import numpy as np
+from .utils import name_generator
+from .utils import color_generator
 
 
 class UniformNoise:

@@ -2,8 +2,9 @@ import pytest
 from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st
-from mixsig.waves import Wave, WaveProperty
 
+from mixsig.waves import WaveProperty
+from mixsig.waves import Wave
 
 waveproperty = st.builds(
     WaveProperty,
@@ -37,7 +38,7 @@ def test_waveproperty_generator(wp):
         assert value1 == value2, f'{wp.mean} {wp.delta}'
 
 
-def test_wave_null():
+def test_wave_default_kwargs():
     wave = Wave()
     assert wave.amplitude == 0
     assert wave.period == 0

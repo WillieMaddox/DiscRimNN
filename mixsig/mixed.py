@@ -9,7 +9,7 @@ class MixedSignal:
                  time_coeffs,
                  sig_coeffs,
                  msig_coeffs=None,
-                 run_label='__default__',
+                 run_label='default',
                  method='sliding'):
 
         self.signals = None
