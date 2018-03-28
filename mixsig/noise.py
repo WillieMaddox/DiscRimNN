@@ -4,26 +4,73 @@ from .utils import color_generator
 
 
 class UniformNoise:
-    def __init__(self, mu=0.0, delta=0.5):
+    def __init__(self, n_timestamps=None, mu=0.0, delta=0.5):
+
+        self.n_timestamps = n_timestamps
         self.mu = mu
         self.delta = delta
         self.low = self.mu - self.delta
         self.hi = self.mu + self.delta
+        self._value = None
+
+    def __len__(self):
+        return len(self.value)
 
     def __call__(self):
-        return np.random.uniform(self.low, self.hi)
+        return self.value
+
+    @property
+    def value(self):
+        if self._value is None:
+            self._generate()
+        return self._value
+
+    def generate(self, n_timestamps=None):
+        if n_timestamps is not None:
+            self.n_timestamps = n_timestamps
+        self._generate()
+        return self._value
+
+    def _generate(self):
+        if self.n_timestamps is None:
+            raise AttributeError('n_timesteps: Not Found')
+        self._value = np.random.uniform(self.low, self.hi, (self.n_timestamps,))
 
     def __repr__(self):
         return 'UniformNoise(low={}, hi={})'.format(self.low, self.hi)
 
 
 class NormalNoise:
-    def __init__(self, mu=0.0, sigma=0.01):
+
+    def __init__(self, n_timestamps=None, mu=0.0, sigma=0.01):
+
+        self.n_timestamps = n_timestamps
         self.mu = mu
         self.sigma = sigma
+        self._value = None
+
+    def __len__(self):
+        return len(self.value)
 
     def __call__(self):
-        return np.random.normal(self.mu, self.sigma)
+        return self.value
+
+    @property
+    def value(self):
+        if self._value is None:
+            self._generate()
+        return self._value
+
+    def generate(self, n_timestamps=None):
+        if n_timestamps is not None:
+            self.n_timestamps = n_timestamps
+        self._generate()
+        return self._value
+
+    def _generate(self):
+        if self.n_timestamps is None:
+            raise AttributeError('n_timesteps: Not Found')
+        self._value = np.random.normal(self.mu, self.sigma, (self.n_timestamps,))
 
     def __repr__(self):
         return 'NormalNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
