@@ -93,12 +93,20 @@ class Wave:
             self._sample = self.generate()
         return self._sample
 
-    def generate(self, offset=0, amplitude=0, period=0, phase=0):
+    def generate(self, **kwargs):
 
-        amplitude = self._amplitude.generate() + amplitude
-        period = self._period.generate() + period
-        offset = self._offset.generate() + offset
-        phase = self._phase.generate() + phase
+        amplitude = self._amplitude.generate()
+        if 'amplitude' in kwargs:
+            amplitude += kwargs['amplitude']
+        period = self._period.generate()
+        if 'period' in kwargs:
+            period += kwargs['period']
+        offset = self._offset.generate()
+        if 'offset' in kwargs:
+            offset += kwargs['offset']
+        phase = self._phase.generate()
+        if 'phase' in kwargs:
+            phase += kwargs['phase']
 
         noise = self._noise.generate()
 

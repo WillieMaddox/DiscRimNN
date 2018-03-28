@@ -143,8 +143,8 @@ class OUNoise:
             self._signals = self.generate()
         return self._signals
 
-    def generate(self, reset=False):
-        if reset:
+    def generate(self, **kwargs):
+        if 'reset' in kwargs and kwargs['reset']:
             self.reset()
 
         self._signals = np.empty((self.n_signals, self.n_timestamps))
