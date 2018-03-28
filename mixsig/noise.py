@@ -103,31 +103,36 @@ class NoNoise:
 class OUNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, n_signals=1, n_timestamps=None, mu=None, theta=0.15, sigma=0.2):
+    def __init__(self,
+                 n_timestamps,
+                 mu=0.0,
+                 theta=0.15,
+                 sigma=0.2,
+                 color=None,
+                 name=None):
+
         """Initialize parameters and noise process."""
-        self.n_signals = n_signals
         self.n_timestamps = n_timestamps
 
-        if isinstance(mu, np.ndarray):
-            assert len(mu) == n_signals
-            self.mu = mu
-        elif isinstance(mu, int):
-            self.mu = np.ones(self.n_signals) * float(mu)
-        elif isinstance(mu, float):
-            self.mu = np.ones(self.n_signals) * mu
-        elif mu is None:
-            self.mu = np.zeros(self.n_signals)
+        if isinstance(mu, (tuple, list, np.ndarray)):
+            self.n_signals = len(mu)
         else:
-            raise ValueError('What is mu???')
+            self.n_signals = 1
 
-        # self.mu = mu if mu is not None else np.zeros(self.n_signals)
+        self.mu = np.ones(self.n_signals) * mu
 
         self.theta = theta
         self.sigma = sigma
 
-        self.state = np.ones(self.n_signals) * self.mu
+        self.state = self.mu
+
+        self.name = name_generator() if name is None else name
+        self.color = color_generator() if color is None else color
 
         self._signals = None
+
+    def __len__(self):
+        return len(self.signals)
 
     def __call__(self):
         return self.signals
@@ -138,11 +143,7 @@ class OUNoise:
             self._signals = self.generate()
         return self._signals
 
-    def generate(self, n_timestamps=None, reset=False):
-        if n_timestamps is not None:
-            self.n_timestamps = n_timestamps
-        if self.n_timestamps is None:
-            raise ValueError('Timestamps are None')
+    def generate(self, reset=False):
         if reset:
             self.reset()
 
@@ -160,5 +161,10 @@ class OUNoise:
 
     def reset(self):
         """Reset the internal state (= noise) to mean (mu)."""
-        self.state = np.ones(self.n_signals) * self.mu
+        self.state = self.mu
+
+    def __repr__(self):
+        return 'OUNoise(theta={}, sigma={})'.format(self.mu, self.sigma)
+
+
 
