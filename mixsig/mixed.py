@@ -18,10 +18,6 @@ class MixedSignal:
         self.classes = None
         self.one_hots = None
         self.mixed_signal = None
-        self.time_coeffs = time_coeffs
-        self.sig_coeffs = sig_coeffs
-        self.msig_coeffs = msig_coeffs
-        self.run_label = run_label
         self.name = 'Mixed'
         self.method = method
         self.n_timestamps = time_coeffs['n_timestamps']
@@ -39,7 +35,15 @@ class MixedSignal:
         for coeffs in sig_coeffs:
             self.signal_objects.append(Wave(self.timestamps, **coeffs))
 
-        self.out_dir = os.path.join(os.getcwd(), 'out', self.run_label)
+        self.config_dict = {
+            'run_label': run_label,
+            'method': self.method,
+            'time_coeffs': time_coeffs,
+            'sig_coeffs': sig_coeffs,
+            'msig_coeffs': msig_coeffs
+        }
+
+        self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
         os.makedirs(self.out_dir, exist_ok=True)
 
     def __len__(self):
@@ -113,13 +117,6 @@ class MixedSignal:
         return x_batch, y_batch
 
     def save_config(self):
-        config_dict = {
-            'run_label': self.run_label,
-            'method': self.method,
-            'time_coeffs': self.time_coeffs,
-            'sig_coeffs': self.sig_coeffs,
-            'msig_coeffs': self.msig_coeffs
-        }
         filename = os.path.join(self.out_dir, 'signal_config.json')
         with open(filename, 'w') as ofs:
-            json.dump(config_dict, ofs, indent=4)
+            json.dump(self.config_dict, ofs, indent=4)
