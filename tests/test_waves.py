@@ -4,8 +4,6 @@ from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st
 from mixsig.timesequence import TimeSequence
-from mixsig.noise import NormalNoise
-from mixsig.noise import UniformNoise
 from mixsig.waves import WaveProperty
 from mixsig.waves import Wave
 

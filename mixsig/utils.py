@@ -11,8 +11,3 @@ def color_generator():
     r, g, b = np.random.randint(0, 255, 3)
     return '#%02X%02X%02X' % (r, g, b)
 
-
-def noise_generator(noise_type, **kwargs):
-    pass
-
-
