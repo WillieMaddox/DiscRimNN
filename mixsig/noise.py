@@ -33,7 +33,7 @@ class UniformNoise:
 
     def _generate(self):
         if self.n_timestamps is None:
-            raise AttributeError('n_timesteps: Not Found')
+            raise AttributeError('n_timestamps: Not Found')
         self._value = np.random.uniform(self.low, self.hi, (self.n_timestamps,))
 
     def __repr__(self):
@@ -69,7 +69,7 @@ class NormalNoise:
 
     def _generate(self):
         if self.n_timestamps is None:
-            raise AttributeError('n_timesteps: Not Found')
+            raise AttributeError('n_timestamps: Not Found')
         self._value = np.random.normal(self.mu, self.sigma, (self.n_timestamps,))
 
     def __repr__(self):
