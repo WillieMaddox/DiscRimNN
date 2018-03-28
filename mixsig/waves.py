@@ -105,4 +105,6 @@ class Wave:
         self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps() / period - phase) + noise
         return self._sample
 
+    def __repr__(self):
+        return 'Wave(amplitude={}, period={}, offset={}, phase={})'.format(self.amplitude, self.period, self.offset, self.phase)
 

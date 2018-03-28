@@ -164,7 +164,7 @@ class OUNoise:
         self.state = self.mu
 
     def __repr__(self):
-        return 'OUNoise(theta={}, sigma={})'.format(self.mu, self.sigma)
+        return 'OUNoise(mu={}, theta={}, sigma={})'.format(self.mu, self.theta, self.sigma)
 
 
 
