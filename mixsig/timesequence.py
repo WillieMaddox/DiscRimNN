@@ -16,6 +16,9 @@ class TimeSequence:
         self.delta = 0 if delta is None else delta
         self._timestamps = None
 
+    def __len__(self):
+        return len(self.timestamps)
+
     def __call__(self):
         return self.timestamps
 

@@ -67,6 +67,7 @@ def test_timesequence_inputs(args, kwargs):
     ts = TimeSequence(*args, **kwargs)
     assert isinstance(ts(), np.ndarray)
     assert len(ts()) == ts.n_timestamps
+    assert len(ts) == ts.n_timestamps
 
 
 @given(st_timesequence_args, st_timesequence_kwargs)
