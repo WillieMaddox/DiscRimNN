@@ -4,7 +4,7 @@ from .utils import color_generator
 
 
 class UniformNoise:
-    def __init__(self, n_timestamps=None, mu=0.0, delta=0.5):
+    def __init__(self, n_timestamps=None, mu=0, delta=0.5):
 
         self.n_timestamps = n_timestamps
         self.mu = mu
@@ -37,12 +37,12 @@ class UniformNoise:
         self._value = np.random.uniform(self.low, self.hi, (self.n_timestamps,))
 
     def __repr__(self):
-        return 'UniformNoise(low={}, hi={})'.format(self.low, self.hi)
+        return 'UniformNoise(lo={}, hi={})'.format(self.low, self.hi)
 
 
 class NormalNoise:
 
-    def __init__(self, n_timestamps=None, mu=0.0, sigma=0.01):
+    def __init__(self, n_timestamps=None, mu=0, sigma=0.01):
 
         self.n_timestamps = n_timestamps
         self.mu = mu

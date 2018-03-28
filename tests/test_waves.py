@@ -48,7 +48,7 @@ def test_wave_default_kwargs():
     assert wave.period == 0
     assert wave.offset == 0
     assert wave.phase == 0
-
+    assert wave.__repr__() == 'Wave(amplitude=0.0, period=0.0, offset=0.0, phase=0.0)'
 
 def test_wave_mean():
     ts = TimeSequence(0.0, 50.0, 201)

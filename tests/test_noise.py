@@ -25,6 +25,11 @@ def test_normal_noise_with_no_size():
         noise()
 
 
+def test_normal_noise_repr():
+    noise = NormalNoise(sigma=0.5)
+    assert noise.__repr__() == 'NormalNoise(mu=0, sigma=0.5)'
+
+
 def test_uniform_noise():
     noise = UniformNoise(n_timestamps=201, delta=0.5)
     assert len(noise) == 201
@@ -40,6 +45,11 @@ def test_uniform_noise_with_no_size():
     noise = UniformNoise(delta=0.5)
     with pytest.raises(AttributeError):
         noise()
+
+
+def test_uniform_noise_repr():
+    noise = UniformNoise(mu=2, delta=1)
+    assert noise.__repr__() == 'UniformNoise(lo=1, hi=3)'
 
 
 st_ounoise_kwargs = st.fixed_dictionaries(
@@ -111,3 +121,11 @@ def test_ou_noise_reset(n_timestamps, kwargs):
         assert np.all(noise.state == noise.mu)
     noise.reset()
     assert np.all(noise.state == noise.mu)
+
+
+def test_ou_noise_repr():
+    noise = OUNoise(30, mu=0.5, theta=0.15, sigma=0.5)
+    assert noise.__repr__() == 'OUNoise(mu=[0.5], theta=0.15, sigma=0.5)'
+
+
+
