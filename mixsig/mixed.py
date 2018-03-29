@@ -138,14 +138,14 @@ class MixedSignal:
         self.labels = labels.reshape(n_samples, self.n_signals)
         return self.inputs, self.labels
 
-    def generate_batch(self, batch_size):
-        x_batch = np.empty((batch_size, *self.inputs.shape))
-        y_batch = np.empty((batch_size, *self.one_hots.shape))
-        for i in range(batch_size):
-            x, y = self.generate()
-            x_batch[i] = x
-            y_batch[i] = y
-        return x_batch, y_batch
+    # def generate_batch(self, batch_size):
+    #     x_batch = np.empty((batch_size, *self.inputs.shape))
+    #     y_batch = np.empty((batch_size, *self.one_hots.shape))
+    #     for i in range(batch_size):
+    #         x, y = self.generate()
+    #         x_batch[i] = x
+    #         y_batch[i] = y
+    #     return x_batch, y_batch
 
     def save_config(self):
         self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
