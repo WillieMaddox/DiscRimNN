@@ -55,6 +55,11 @@ class MixedSignal:
             'msig_coeffs': msig_coeffs
         }
 
+        # TODO: What's the appropriate way to assign the out_dir (regular functionality, unit tests, etc.)
+        # Relative to the directory of the calling script?
+        # Relative to the directory of this module?
+        # Relative to the root of the project directory?
+
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
         os.makedirs(self.out_dir, exist_ok=True)
         self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
