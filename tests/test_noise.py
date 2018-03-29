@@ -6,6 +6,7 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 from mixsig.noise import NormalNoise
 from mixsig.noise import UniformNoise
+from mixsig.noise import NoNoise
 from mixsig.noise import OUNoise
 
 def test_normal_noise():
@@ -50,6 +51,11 @@ def test_uniform_noise_with_no_size():
 def test_uniform_noise_repr():
     noise = UniformNoise(mu=2, delta=1)
     assert noise.__repr__() == 'UniformNoise(lo=1, hi=3)'
+
+
+def test_no_noise_repr():
+    noise = NoNoise()
+    assert noise.__repr__() == 'NoNoise()'
 
 
 st_ounoise_kwargs = st.fixed_dictionaries(
