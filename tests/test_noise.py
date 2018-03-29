@@ -114,6 +114,15 @@ def test_ou_noise_generator(noise):
     assert noise.signals.shape == (noise.n_signals, noise.n_timestamps)
 
 
+def test_ou_noise_length():
+    noise = OUNoise(30, mu=0.5)
+    assert len(noise) == 1
+    noise = OUNoise(30, mu=[0.5, 1.3])
+    assert len(noise) == 2
+    noise = OUNoise(30, mu=[0.5, 1.3, 5.6])
+    assert len(noise) == 3
+
+
 @given(st.integers(min_value=2, max_value=20000), st_ounoise_kwargs)
 @example(n_timestamps=30, kwargs={'mu': 0.0})
 @example(n_timestamps=30, kwargs={'mu': [0.0, 0.5]})
