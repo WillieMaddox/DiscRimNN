@@ -1,4 +1,8 @@
+import os
+import json
 import pytest
+from distutils.dir_util import copy_tree
+from pytest import fixture
 import numpy as np
 from mixsig.mixed import MixedSignal
 
@@ -256,3 +260,79 @@ def test_create_from_2_waves_boxcar():
     assert msig.labels.shape == (time_coeffs['n_timestamps'] / n_timesteps, len(sig_coeffs['waves']))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+
+
+@fixture
+def datadir(tmpdir, request):
+    """
+    REF: http://www.camillescott.org/2016/07/15/travis-pytest-scipyconf/
+    Fixture responsible for locating the test data directory and copying it
+    into a temporary directory.
+    """
+    filename = request.module.__file__
+    test_dir = os.path.dirname(filename)
+    data_dir = os.path.join(test_dir, 'data')
+    copy_tree(data_dir, str(tmpdir))
+
+    def getter(filename, as_str=True):
+        filepath = tmpdir.join(filename)
+        if as_str:
+            return str(filepath)
+        return filepath
+
+    return getter
+
+
+def test_generate_config(datadir):
+    sig1_coeffs = {
+        'amplitude': {'mean': 1.0, 'delta': 0},
+        'period': {'mean': 1, 'delta': 0},
+        'offset': {'mean': -0.1, 'delta': 0},
+        'phase': {'mean': 0, 'delta': 0},
+        'name': 'A',
+        'color': '#ff0000'
+    }
+    sig2_coeffs = {
+        'amplitude': {'mean': 1.0, 'delta': 0},
+        'period': {'mean': 1, 'delta': 0},
+        'offset': {'mean': 0.0, 'delta': 0},
+        'phase': {'mean': 0, 'delta': 0},
+        'name': 'B',
+        'color': '#00ff00'
+    }
+    sig3_coeffs = {
+        'amplitude': {'mean': 1.0, 'delta': 0},
+        'period': {'mean': 1, 'delta': 0},
+        'offset': {'mean': 0.1, 'delta': 0},
+        'phase': {'mean': 0, 'delta': 0},
+        'name': 'C',
+        'color': '#0000ff'
+    }
+    sig_coeffs = {'waves': [sig1_coeffs, sig2_coeffs, sig3_coeffs]}
+
+    msig_coeffs = {
+        'amplitude': {'mean': 10, 'delta': 2},
+        'period': {'mean': 25, 'delta': 0},
+        'offset': {'mean': 1, 'delta': 5},
+        'phase': {'mean': 0, 'delta': np.pi},
+    }
+
+    time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
+    n_timesteps = 10
+    msig = MixedSignal(
+        time_coeffs,
+        sig_coeffs,
+        msig_coeffs=msig_coeffs,
+        n_timesteps=n_timesteps,
+        method='sliding',
+        run_label='test'
+    )
+    truth_filename = datadir('mixed_signal_config.json')
+    with open(truth_filename, 'rb') as ifs:
+        signal_config_truth = json.load(ifs)
+
+    msig.save_config()
+    with open(msig.config_filename, 'rb') as ifs:
+        signal_config_test = json.load(ifs)
+
+    assert signal_config_truth == signal_config_test
