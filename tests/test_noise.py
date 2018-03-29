@@ -125,7 +125,7 @@ def test_ou_noise_reset(n_timestamps, kwargs):
 
 def test_ou_noise_repr():
     noise = OUNoise(30, mu=0.5, theta=0.15, sigma=0.5)
-    assert noise.__repr__() == 'OUNoise(mu=[0.5], theta=0.15, sigma=0.5)'
+    assert noise.__repr__() == 'OUNoise(mu=[ 0.5], theta=0.15, sigma=0.5)'
 
 
 
