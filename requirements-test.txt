@@ -2,3 +2,5 @@ numpy
 pytest>=3.5.0
 pytest-cov
 hypothesis
+coverage
+coveralls
