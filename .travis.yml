@@ -8,3 +8,6 @@ install:
   - pip install -r requirements-test.txt
 script:
   - python setup.py test
+  - coverage run --source=mixsig setup.py test
+after_success:
+  - coveralls
