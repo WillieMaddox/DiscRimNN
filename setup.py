@@ -38,7 +38,7 @@ def setup_package():
         install_requires=['numpy', 'pandas', 'matplotlib', 'jupyter'],
         classifiers=[],
         packages=[package for package in find_packages() if package.startswith('mixsig')],
-        tests_require=['pytest', 'hypothesis', 'pytest-cov'],
+        tests_require=['pytest', 'hypothesis'],
         test_suite='',
         # cmdclass=cmdclass,
         command_options={},
