@@ -30,7 +30,7 @@ class TimeSequence:
 
     def generate(self):
         """
-        If self.delta == 0
+        If self.delta == 0 and self.dt == 1
         time spacing is like...
         _timestamps 0.00, 1.00, 2.00, 3.00, 4.00, 5.00 ...
 
