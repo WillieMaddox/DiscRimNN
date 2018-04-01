@@ -40,8 +40,9 @@ class TimeSequence:
         deltas             +.10, -.35, +.12, -.14, -.02, -.13 ...
         _timestamps        0.10, 0.65, 2.12, 2.86, 3.98, 5.13 ...
         """
-        if self.delta == 0:
-            deltas = 0
-        else:
-            deltas = (self.dt / 2.0) * self.delta * (2.0 * np.random.uniform(size=self.n_timestamps) - 1)
+        deltas = (
+            (self.dt / 2.0) * self.delta * (2.0 * np.random.uniform(size=self.n_timestamps) - 1)
+            if self.delta == 0
+            else 0
+        )
         self._timestamps = self.uniform_timestamps + deltas
