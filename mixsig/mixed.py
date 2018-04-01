@@ -67,10 +67,24 @@ class MixedSignal:
     @property
     def signals(self):
         if self._signals is None:
-            self.generate_signals()
+            self._generate_signals()
         return self._signals
 
-    def generate_signals(self):
+    def _create_class_distribution(self):
+        # Create a distribution of ints which represent class labels.
+        shuffled_indexes = np.arange(self.n_timestamps)
+        np.random.shuffle(shuffled_indexes)
+        self.classes = np.zeros(self.n_timestamps, dtype=int)
+        for s in range(self.n_signals):
+            self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
+
+    def _create_one_hots_from_classes(self):
+        # Create one-hot vector from the class label distribution
+        self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
+        self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
+
+    def _generate_signals(self):
+        # Generate signals from property values
         self.timestamps.generate()
         props = self.generate_property_values()
         self._signals = np.vstack([sig.generate(**props) for sig in self.signal_objects])
@@ -104,16 +118,10 @@ class MixedSignal:
         return self.inputs, self.labels
 
     def _generate(self):
-        shuffled_indexes = np.arange(self.n_timestamps)
-        np.random.shuffle(shuffled_indexes)
-        self.classes = np.zeros(self.n_timestamps, dtype=int)
-        for s in range(self.n_signals):
-            self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
 
-        self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
-        self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
-
-        self.generate_signals()
+        self._create_class_distribution()
+        self._create_one_hots_from_classes()
+        self._generate_signals()
 
         self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
 
