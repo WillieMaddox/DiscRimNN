@@ -35,7 +35,16 @@ def setup_package():
         description=DESCRIPTION,
         long_description='',
         setup_requires=['pytest-runner'],
-        install_requires=['numpy', 'pandas', 'matplotlib', 'jupyter'],
+        install_requires=['numpy'],
+        extras_requires={
+            'all': [
+                'pandas',
+                'matplotlib',
+                'jupyter',
+                'jupyter_contrib_nbextensions',
+                'keras'
+            ]
+        },
         classifiers=[],
         packages=[package for package in find_packages() if package.startswith('mixsig')],
         tests_require=['pytest', 'hypothesis'],
