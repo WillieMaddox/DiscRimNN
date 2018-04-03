@@ -48,6 +48,7 @@ def test_wave_default_kwargs():
     assert wave.phase == 0
     assert wave.__repr__() == 'Wave(amplitude=0.0, period=0.0, offset=0.0, phase=0.0)'
 
+
 def test_wave_mean():
     ts = TimeSequence(0.0, 50.0, 201)
     params = {
@@ -71,7 +72,7 @@ def test_wave_mean():
     assert wave.period == 5
     assert wave.offset == -3
     assert wave.phase == 2
-    assert wave.noise == 0
+    assert wave.signal_noise == 0
 
 
 def test_wave_with_delayed_size():
@@ -99,11 +100,11 @@ def test_wave_with_uniform_noise():
     params = {
         'amplitude': {'mean': 1},
         'period': {'mean': 1},
-        'noise': {'uniform': {'n_timestamps': len(ts), 'mu': 0.0, 'delta': 0.5}},
+        'noise': {'uniform': {'mu': 0.0, 'delta': 0.5}},
     }
     wave = Wave(ts, **params)
     wave.generate()
-    assert len(wave.noise) == len(ts)
+    assert len(wave.signal_noise) == len(ts)
 
 
 def test_wave_with_normal_noise():
@@ -111,11 +112,11 @@ def test_wave_with_normal_noise():
     params = {
         'amplitude': {'mean': 1},
         'period': {'mean': 1},
-        'noise': {'normal': {'n_timestamps': len(ts), 'mu': 0.0, 'sigma': 0.5}},
+        'noise': {'normal': {'mu': 0.0, 'sigma': 0.5}},
     }
     wave = Wave(ts, **params)
     wave.generate()
-    assert len(wave.noise) == len(ts)
+    assert len(wave.signal_noise) == len(ts)
 
 
 def test_wave_with_no_noise():
@@ -126,4 +127,4 @@ def test_wave_with_no_noise():
     }
     wave = Wave(ts, **params)
     wave.generate()
-    assert wave.noise == 0
+    assert wave.signal_noise == 0

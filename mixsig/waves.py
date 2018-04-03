@@ -1,10 +1,9 @@
-import string
 import numpy as np
-from .noise import NoNoise
-from .noise import NormalNoise
-from .noise import UniformNoise
 from .utils import name_generator
 from .utils import color_generator
+from .utils import normal_noise_generator
+from .utils import uniform_noise_generator
+from .utils import no_noise
 
 
 class WaveProperty:
@@ -47,7 +46,6 @@ class Wave:
 
         self.timestamps = timestamps
         self._sample = None
-
         amplitude = {} if amplitude is None else amplitude
         self._amplitude = WaveProperty(**amplitude)
         period = {} if period is None else period
@@ -59,12 +57,13 @@ class Wave:
 
         noise = {} if noise is None else noise
         if 'uniform' in noise:
-            self._noise = UniformNoise(**noise['uniform'])
+            self.signal_noise_generator = uniform_noise_generator(**noise['uniform'])
         elif 'normal' in noise:
-            self._noise = NormalNoise(**noise['normal'])
+            self.signal_noise_generator = normal_noise_generator(**noise['normal'])
         else:
-            self._noise = NoNoise()
+            self.signal_noise_generator = no_noise()
 
+        self.signal_noise = self.signal_noise_generator(len(self.timestamps))
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
 
@@ -83,10 +82,6 @@ class Wave:
     @property
     def phase(self):
         return self._phase()
-
-    @property
-    def noise(self):
-        return self._noise()
 
     def __call__(self):
         return self.sample
@@ -112,9 +107,9 @@ class Wave:
         if 'phase' in kwargs:
             phase += kwargs['phase']
 
-        noise = self._noise.generate()
+        self.signal_noise = self.signal_noise_generator(len(self.timestamps))
 
-        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps() / period - phase) + noise
+        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps() / period - phase) + self.signal_noise
         return self._sample
 
     def __repr__(self):

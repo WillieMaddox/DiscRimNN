@@ -4,58 +4,7 @@ from hypothesis import example
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 import numpy as np
-from mixsig.noise import NormalNoise
-from mixsig.noise import UniformNoise
-from mixsig.noise import NoNoise
 from mixsig.noise import OUNoise
-
-def test_normal_noise():
-    noise = NormalNoise(n_timestamps=201, sigma=0.5)
-    assert len(noise) == 201
-
-
-def test_normal_noise_with_delayed_size():
-    noise = NormalNoise(sigma=0.5)
-    noise.generate(n_timestamps=201)
-    assert len(noise) == 201
-
-
-def test_normal_noise_with_no_size():
-    noise = NormalNoise(sigma=0.5)
-    with pytest.raises(AttributeError):
-        noise()
-
-
-def test_normal_noise_repr():
-    noise = NormalNoise(sigma=0.5)
-    assert noise.__repr__() == 'NormalNoise(mu=0, sigma=0.5)'
-
-
-def test_uniform_noise():
-    noise = UniformNoise(n_timestamps=201, delta=0.5)
-    assert len(noise) == 201
-
-
-def test_uniform_noise_with_delayed_size():
-    noise = UniformNoise(delta=0.5)
-    noise.generate(n_timestamps=201)
-    assert len(noise) == 201
-
-
-def test_uniform_noise_with_no_size():
-    noise = UniformNoise(delta=0.5)
-    with pytest.raises(AttributeError):
-        noise()
-
-
-def test_uniform_noise_repr():
-    noise = UniformNoise(mu=2, delta=1)
-    assert noise.__repr__() == 'UniformNoise(lo=1, hi=3)'
-
-
-def test_no_noise_repr():
-    noise = NoNoise()
-    assert noise.__repr__() == 'NoNoise()'
 
 
 st_ounoise_kwargs = st.fixed_dictionaries(
