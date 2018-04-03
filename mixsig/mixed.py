@@ -1,7 +1,7 @@
 import os
 import json
 import numpy as np
-from .timesequence import TimeSequence
+from .utils import timesequence_generator
 from .waves import Wave, WaveProperty
 from .noise import OUNoise
 
@@ -26,8 +26,11 @@ class MixedSignal:
         self.one_hots = None
         self.mixed_signal = None
 
-        self.timestamps = TimeSequence(**time_coeffs)
+        self.sequence_generator = timesequence_generator(**time_coeffs)
+        self.timestamps = self.sequence_generator()
         self.n_timestamps = len(self.timestamps)
+        self.time_start = time_coeffs['start']
+        self.time_stop = time_coeffs['stop']
         self.n_timesteps = n_timesteps
 
         self.name = 'Mixed'
@@ -88,7 +91,7 @@ class MixedSignal:
     def _generate_signals(self):
         """ Generate signals from property values."""
         # generate new timestamps
-        self.timestamps.generate()
+        self.timestamps = self.sequence_generator()
         # generate new values for each mixed signal property.
         props = {name: prop.generate() for name, prop in self.mixed_signal_props.items()}
         # generate new single signals.

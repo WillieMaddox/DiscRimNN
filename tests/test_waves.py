@@ -3,7 +3,7 @@ import pytest
 from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st
-from mixsig.timesequence import TimeSequence
+from mixsig.utils import timesequence_generator
 from mixsig.waves import WaveProperty
 from mixsig.waves import Wave
 
@@ -40,7 +40,8 @@ def test_waveproperty_generator(wp):
 
 
 def test_wave_default_kwargs():
-    ts = TimeSequence(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    ts = sequence_generator()
     wave = Wave(ts)
     assert wave.amplitude == 0
     assert wave.period == 0
@@ -50,7 +51,8 @@ def test_wave_default_kwargs():
 
 
 def test_wave_mean():
-    ts = TimeSequence(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1, 'delta': 0},
         'period': {'mean': 5, 'delta': 0},
@@ -76,7 +78,8 @@ def test_wave_mean():
 
 
 def test_wave_with_delayed_size():
-    ts = TimeSequence(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
         'period': {'mean': 1},
@@ -96,7 +99,8 @@ def test_wave_with_no_timesequence_arg():
 
 
 def test_wave_with_uniform_noise():
-    ts = TimeSequence(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
         'period': {'mean': 1},
@@ -108,7 +112,8 @@ def test_wave_with_uniform_noise():
 
 
 def test_wave_with_normal_noise():
-    ts = TimeSequence(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
         'period': {'mean': 1},
@@ -120,7 +125,8 @@ def test_wave_with_normal_noise():
 
 
 def test_wave_with_no_noise():
-    ts = TimeSequence(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
         'period': {'mean': 1},

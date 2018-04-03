@@ -45,6 +45,7 @@ class Wave:
                  name=None):
 
         self.timestamps = timestamps
+
         self._sample = None
         amplitude = {} if amplitude is None else amplitude
         self._amplitude = WaveProperty(**amplitude)
@@ -62,8 +63,8 @@ class Wave:
             self.signal_noise_generator = normal_noise_generator(**noise['normal'])
         else:
             self.signal_noise_generator = no_noise()
-
         self.signal_noise = self.signal_noise_generator(len(self.timestamps))
+
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
 
@@ -109,7 +110,7 @@ class Wave:
 
         self.signal_noise = self.signal_noise_generator(len(self.timestamps))
 
-        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps() / period - phase) + self.signal_noise
+        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps / period - phase) + self.signal_noise
         return self._sample
 
     def __repr__(self):
