@@ -18,6 +18,8 @@ class MixedSignal:
         self._signals = None
         self._signal_names = None
         self._signal_colors = None
+
+        # Should these be properties?
         self.inputs = None
         self.labels = None
         self.classes = None
@@ -71,7 +73,7 @@ class MixedSignal:
         return self._signals
 
     def _create_class_distribution(self):
-        # Create a distribution of ints which represent class labels.
+        """ Create a distribution of ints which represent class labels."""
         shuffled_indexes = np.arange(self.n_timestamps)
         np.random.shuffle(shuffled_indexes)
         self.classes = np.zeros(self.n_timestamps, dtype=int)
@@ -79,14 +81,19 @@ class MixedSignal:
             self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
 
     def _create_one_hots_from_classes(self):
-        # Create one-hot vector from the class label distribution
+        """ Create one-hot vector from the class label distribution."""
         self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
         self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
 
     def _generate_signals(self):
-        # Generate signals from property values
+        """ Generate signals from property values."""
+        # generate new timestamps
         self.timestamps.generate()
-        props = self.generate_property_values()
+        # generate new values for each mixed signal property.
+        props = {}
+        for name, prop in self.mixed_signal_props.items():
+            props[name] = prop.generate()
+        # generate new single signals.
         self._signals = np.vstack([sig.generate(**props) for sig in self.signal_objects])
 
     @property
@@ -100,12 +107,6 @@ class MixedSignal:
         if self._signal_colors is None:
             self._signal_colors = np.hstack([sig.color for sig in self.signal_objects])
         return self._signal_colors
-
-    def generate_property_values(self):
-        prop_vals = {}
-        for name, prop in self.mixed_signal_props.items():
-            prop_vals[name] = prop.generate()
-        return prop_vals
 
     def generate(self):
         self._generate()

@@ -27,7 +27,11 @@ class WaveProperty:
         return self._value
 
     def _generate(self):
-        self._value = self.mean if self.delta == 0 else (2 * np.random.random() - 1) * self.delta + self.mean
+        self._value = (
+            self.mean
+            if self.delta == 0
+            else (2 * np.random.random() - 1) * self.delta + self.mean
+        )
 
 
 class Wave:
