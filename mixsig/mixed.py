@@ -90,9 +90,7 @@ class MixedSignal:
         # generate new timestamps
         self.timestamps.generate()
         # generate new values for each mixed signal property.
-        props = {}
-        for name, prop in self.mixed_signal_props.items():
-            props[name] = prop.generate()
+        props = {name: prop.generate() for name, prop in self.mixed_signal_props.items()}
         # generate new single signals.
         self._signals = np.vstack([sig.generate(**props) for sig in self.signal_objects])
 
