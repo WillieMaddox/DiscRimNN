@@ -63,13 +63,14 @@ def test_ou_noise_generator(noise):
     assert noise.signals.shape == (noise.n_signals, noise.n_timestamps)
 
 
-def test_ou_noise_length():
-    noise = OUNoise(30, mu=0.5)
-    assert len(noise) == 1
-    noise = OUNoise(30, mu=[0.5, 1.3])
-    assert len(noise) == 2
-    noise = OUNoise(30, mu=[0.5, 1.3, 5.6])
-    assert len(noise) == 3
+@pytest.mark.parametrize('mu,res', [
+    (0.5, 1),
+    ([0.5, 1.3], 2),
+    ([0.5, 1.3, 5.6], 3)
+], ids=repr)
+def test_ou_noise_length(mu, res):
+    noise = OUNoise(30, mu=mu)
+    assert len(noise) == res
 
 
 @given(st.integers(min_value=2, max_value=20000), st_ounoise_kwargs)
