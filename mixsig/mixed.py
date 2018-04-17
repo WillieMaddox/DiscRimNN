@@ -13,7 +13,9 @@ class MixedSignal:
                  msig_coeffs=None,
                  n_timesteps=1,
                  run_label='default',
-                 method='sliding'):
+                 method='sliding',
+                 net_type='RNN',
+                 rnn_model='many2one'):
 
         self._signals = None
         self._signal_names = None
@@ -42,6 +44,10 @@ class MixedSignal:
             assert self.n_timestamps % self.n_timesteps == 0
             self.n_samples = self.n_timestamps // self.n_timesteps
 
+        self.net_type = net_type
+        assert self.net_type in ('MLP', 'RNN')
+        self.rnn_model = rnn_model
+        assert self.rnn_model in ('many2one', 'many2many')
 
         self.mixed_signal_props = {}
         for prop_name, coeffs in msig_coeffs.items():
