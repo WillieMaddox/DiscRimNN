@@ -97,10 +97,10 @@ class Wave:
 
         amplitude = self._amplitude.generate()
         if 'amplitude' in kwargs:
-            amplitude += kwargs['amplitude']
+            amplitude *= kwargs['amplitude']
         period = self._period.generate()
         if 'period' in kwargs:
-            period += kwargs['period']
+            period *= kwargs['period']
         offset = self._offset.generate()
         if 'offset' in kwargs:
             offset += kwargs['offset']
