@@ -14,8 +14,10 @@ def color_generator() -> Text:
 
 
 def uniform_noise_generator(mu=0, delta=0.5):
+    lo, hi = mu - delta, mu + delta
+
     def gen_noise(n_timestamps):
-        return np.random.uniform(mu - delta, mu + delta, (n_timestamps,))
+        return np.random.uniform(lo, hi, (n_timestamps,))
     return gen_noise
 
 

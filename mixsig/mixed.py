@@ -9,7 +9,7 @@ from .noise import OUNoise
 class MixedSignal:
     def __init__(self,
                  time_coeffs,
-                 sig_coeffs,
+                 sigs_coeffs,
                  msig_coeffs=None,
                  n_timesteps=1,
                  run_label='default',
@@ -54,7 +54,7 @@ class MixedSignal:
             self.mixed_signal_props[prop_name] = WaveProperty(**coeffs)
 
         self.signal_objects = []
-        for sig, coeffs in sig_coeffs.items():
+        for sig, coeffs in sigs_coeffs.items():
             if sig == 'waves':
                 for c in coeffs:
                     self.signal_objects.append(Wave(self.timestamps, **c))
@@ -67,7 +67,7 @@ class MixedSignal:
             'run_label': run_label,
             'method': self.method,
             'time_coeffs': time_coeffs,
-            'sig_coeffs': sig_coeffs,
+            'sigs_coeffs': sigs_coeffs,
             'msig_coeffs': msig_coeffs
         }
 
