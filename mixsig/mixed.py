@@ -34,9 +34,14 @@ class MixedSignal:
         self.n_timesteps = n_timesteps
 
         self.name = 'Mixed'
-        self.method = method
-        if method == 'boxcar':
+        self.method = method.lower()
+        assert self.method in ('sliding', 'boxcar')
+        if method.lower() == 'sliding':
+            self.n_samples = self.n_timestamps - self.n_timesteps + 1
+        else:
             assert self.n_timestamps % self.n_timesteps == 0
+            self.n_samples = self.n_timestamps // self.n_timesteps
+
 
         self.mixed_signal_props = {}
         for prop_name, coeffs in msig_coeffs.items():
