@@ -109,8 +109,7 @@ class Wave:
             phase += kwargs['phase']
 
         self.signal_noise = self.signal_noise_generator(len(self.timestamps))
-
-        self._sample = offset + amplitude * np.cos(2.0 * np.pi * self.timestamps / period - phase) + self.signal_noise
+        self._sample = offset + amplitude * np.cos(2.0 * np.pi * (self.timestamps / period - phase)) + self.signal_noise
         return self._sample
 
     def __repr__(self):
