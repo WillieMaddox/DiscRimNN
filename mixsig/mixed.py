@@ -15,7 +15,7 @@ class MixedSignal:
                  run_label='default',
                  method='sliding',
                  net_type='RNN',
-                 rnn_model='many2one'):
+                 model='many2one'):
 
         self._signals = None
         self._signal_names = None
@@ -46,8 +46,8 @@ class MixedSignal:
 
         self.net_type = net_type
         assert self.net_type in ('MLP', 'RNN')
-        self.rnn_model = rnn_model
-        assert self.rnn_model in ('many2one', 'many2many')
+        self.model = model
+        assert self.model in ('many2one', 'many2many')
 
         self.mixed_signal_props = {}
         for prop_name, coeffs in msig_coeffs.items():
@@ -59,7 +59,14 @@ class MixedSignal:
                 for c in coeffs:
                     self.signal_objects.append(Wave(self.timestamps, **c))
             elif sig == 'noise':
-                self.signal_objects.append(OUNoise(self.n_timestamps, **coeffs))
+                noise_coeffs = {}
+                for c in coeffs:
+                    for k, v in c.items():
+                        if k not in noise_coeffs:
+                            noise_coeffs[k] = []
+                        noise_coeffs[k].append(v)
+
+                self.signal_objects.append(OUNoise(self.n_timestamps, **noise_coeffs))
 
         self.n_signals = len(self.signals)
 
@@ -150,90 +157,99 @@ class MixedSignal:
     def generate_sliding_new(self):
 
         if self.net_type == 'MLP':
-            # MLP: many to one
-            self.inputs = np.lib.stride_tricks.as_strided(
-                self.mixed_signal,
-                shape=(self.n_samples, self.n_timesteps),
-                strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize)
-            )
-            self.labels = self.one_hots[(self.n_timesteps - 1):]
+            if self.model == 'many2one':
+                # MLP: many to one
+                self.inputs = np.lib.stride_tricks.as_strided(
+                    self.mixed_signal,
+                    shape=(self.n_samples, self.n_timesteps),
+                    strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize)
+                )
+                self.labels = self.one_hots[(self.n_timesteps - 1):]
+            else:
+                raise NotImplementedError
 
-        elif self.rnn_model == 'many2one':
-            # RNN: many to one
-            self.inputs = np.lib.stride_tricks.as_strided(
-                self.mixed_signal,
-                shape=(self.n_samples, self.n_timesteps, 1),
-                strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
-            )
-            self.labels = self.one_hots[(self.n_timesteps - 1):]
-
-        elif self.rnn_model == 'many2many':
-            # RNN: many to many
-            self.inputs = np.lib.stride_tricks.as_strided(
-                self.mixed_signal,
-                shape=(self.n_samples, self.n_timesteps, 1),
-                strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
-            )
-            self.labels = np.lib.stride_tricks.as_strided(
-                self.one_hots,
-                shape=(self.n_samples, self.n_timesteps, self.n_signals),
-                strides=(self.n_signals * self.one_hots.strides[1], self.one_hots.strides[0], self.one_hots.strides[1]),
-            )
         else:
-            raise ValueError
+            if self.model == 'many2one':
+                # RNN: many to one
+                self.inputs = np.lib.stride_tricks.as_strided(
+                    self.mixed_signal,
+                    shape=(self.n_samples, self.n_timesteps, 1),
+                    strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
+                )
+                self.labels = self.one_hots[(self.n_timesteps - 1):]
+
+            elif self.model == 'many2many':
+                # RNN: many to many
+                self.inputs = np.lib.stride_tricks.as_strided(
+                    self.mixed_signal,
+                    shape=(self.n_samples, self.n_timesteps, 1),
+                    strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
+                )
+                self.labels = np.lib.stride_tricks.as_strided(
+                    self.one_hots,
+                    shape=(self.n_samples, self.n_timesteps, self.n_signals),
+                    strides=(self.n_signals * self.one_hots.strides[1], self.one_hots.strides[0], self.one_hots.strides[1]),
+                )
 
     def generate_sliding(self):
 
         if self.net_type == 'MLP':
-            # MLP: many to one
-            inputs = np.zeros((self.n_samples, self.n_timesteps))
-            for i in range(self.n_timesteps):
-                inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
-            self.inputs = inputs
-            self.labels = self.one_hots[(self.n_timesteps - 1):]
+            if self.model == 'many2one':
+                # MLP: many to one
+                inputs = np.zeros((self.n_samples, self.n_timesteps))
+                for i in range(self.n_timesteps):
+                    inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
+                self.inputs = inputs
+                self.labels = self.one_hots[(self.n_timesteps - 1):]
+            else:
+                # MLP: many to many
+                raise NotImplementedError
 
-        elif self.rnn_model == 'many2one':
-            # RNN: many to one
-            inputs = np.zeros((self.n_samples, self.n_timesteps))
-            for i in range(self.n_timesteps):
-                inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
-            self.inputs = inputs.reshape(self.n_samples, self.n_timesteps, 1)
-            self.labels = self.one_hots[(self.n_timesteps - 1):]
-
-        elif self.rnn_model == 'many2many':
-            # RNN: many to many
-            inputs = np.zeros((self.n_samples, self.n_timesteps))
-            labels = np.zeros((self.n_samples, self.n_timesteps, self.n_signals))
-            for i in range(self.n_timesteps):
-                inputs[:, i] = self.mixed_signal[i:i + self.n_samples]
-                labels[:, i] = self.one_hots[i:i + self.n_samples]
-            self.inputs = inputs.reshape(self.n_samples, self.n_timesteps, 1)
-            self.labels = labels.reshape(self.n_samples, self.n_timesteps, self.n_signals)
         else:
-            raise ValueError
+            if self.model == 'many2one':
+                # RNN: many to one
+                inputs = np.zeros((self.n_samples, self.n_timesteps))
+                for i in range(self.n_timesteps):
+                    inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
+                self.inputs = inputs.reshape(self.n_samples, self.n_timesteps, 1)
+                self.labels = self.one_hots[(self.n_timesteps - 1):]
+
+            else:
+                # RNN: many to many
+                inputs = np.zeros((self.n_samples, self.n_timesteps))
+                labels = np.zeros((self.n_samples, self.n_timesteps, self.n_signals))
+                for i in range(self.n_timesteps):
+                    inputs[:, i] = self.mixed_signal[i:i + self.n_samples]
+                    labels[:, i] = self.one_hots[i:i + self.n_samples]
+                self.inputs = inputs.reshape(self.n_samples, self.n_timesteps, 1)
+                self.labels = labels.reshape(self.n_samples, self.n_timesteps, self.n_signals)
 
     def generate_boxcar(self):
 
         if self.net_type == 'MLP':
-            # MLP: many to one
-            self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps))
-            labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
-            labels = labels[:, -1, :]
-            self.labels = labels.reshape(self.n_samples, self.n_signals)
+            if self.model == 'many2one':
+                # MLP: many to one
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps))
+                labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
+                labels = labels[:, -1, :]
+                self.labels = labels.reshape(self.n_samples, self.n_signals)
+            else:
+                # MLP: many to many
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
+                self.labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
 
-        elif self.rnn_model == 'many2one':
-            # RNN: many to one
-            self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
-            labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
-            labels = labels[:, -1, :]
-            self.labels = labels.reshape(self.n_samples, self.n_signals)
-
-        elif self.rnn_model == 'many2many':
-            # RNN: many to many
-            self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
-            self.labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
         else:
-            raise ValueError
+            if self.model == 'many2one':
+                # RNN: many to one
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
+                labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
+                labels = labels[:, -1, :]
+                self.labels = labels.reshape(self.n_samples, self.n_signals)
+
+            else:
+                # RNN: many to many
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
+                self.labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
 
     # def generate_batch(self, batch_size):
     #     x_batch = np.empty((batch_size, *self.inputs.shape))
