@@ -7,7 +7,7 @@
         "n_timestamps": 301,
         "delta": 0
     },
-    "sig_coeffs": {
+    "sigs_coeffs": {
         "waves": [
             {
                 "amplitude": {
@@ -86,7 +86,7 @@
         },
         "phase": {
             "mean": 0,
-            "delta": 3.141592653589793
+            "delta": 1
         }
     }
 }

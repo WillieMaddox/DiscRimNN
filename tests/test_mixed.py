@@ -12,7 +12,7 @@ from mixsig.mixed import MixedSignal
 
 
 def test_create_from_3_waves_0_noise():
-    sig1_coeffs = {
+    wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
@@ -20,7 +20,7 @@ def test_create_from_3_waves_0_noise():
         'name': 'A',
         'color': '#ff0000'
     }
-    sig2_coeffs = {
+    wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -28,7 +28,7 @@ def test_create_from_3_waves_0_noise():
         'name': 'B',
         'color': '#00ff00'
     }
-    sig3_coeffs = {
+    wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
@@ -36,20 +36,20 @@ def test_create_from_3_waves_0_noise():
         'name': 'C',
         'color': '#0000ff'
     }
-    sig_coeffs = {'waves': [sig1_coeffs, sig2_coeffs, sig3_coeffs]}
+    sigs_coeffs = {'waves': [wave1_coeffs, wave2_coeffs, wave3_coeffs]}
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
         'period': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
-        'phase': {'mean': 0, 'delta': np.pi},
+        'phase': {'mean': 0, 'delta': 1},
     }
 
     time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,
-        sig_coeffs,
+        sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
         method='sliding',
@@ -57,18 +57,18 @@ def test_create_from_3_waves_0_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sig_coeffs['waves'])
+    assert len(msig.signals) == len(sigs_coeffs['waves'])
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sig_coeffs['waves']))
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs['waves']))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_2_waves_1_noise():
-    sig1_coeffs = {
+    wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
@@ -76,7 +76,7 @@ def test_create_from_2_waves_1_noise():
         'name': 'A',
         'color': '#ff0000'
     }
-    sig2_coeffs = {
+    wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -84,30 +84,30 @@ def test_create_from_2_waves_1_noise():
         'name': 'B',
         'color': '#00ff00'
     }
-    sig3_coeffs = {
+    noise1_coeffs = {
         'mu': 1.0,
         'theta': 0.5,
         'sigma': 0.01,
         'name': 'C',
         'color': '#0000ff'
     }
-    sig_coeffs = {
-        'waves': [sig1_coeffs, sig2_coeffs],
-        'noise': sig3_coeffs
+    sigs_coeffs = {
+        'waves': [wave1_coeffs, wave2_coeffs],
+        'noise': [noise1_coeffs]
     }
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
         'period': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
-        'phase': {'mean': 0, 'delta': np.pi},
+        'phase': {'mean': 0, 'delta': 1},
     }
 
     time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,
-        sig_coeffs,
+        sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
         method='sliding',
@@ -115,18 +115,18 @@ def test_create_from_2_waves_1_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sig_coeffs['waves']) + 1
+    assert len(msig.signals) == len(sigs_coeffs['waves']) + 1
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sig_coeffs['waves']) + 1)
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs['waves']) + 1)
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_1_waves_2_noise():
-    sig1_coeffs = {
+    wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
@@ -134,37 +134,50 @@ def test_create_from_1_waves_2_noise():
         'name': 'A',
         'color': '#ff0000'
     }
-    sig2_coeffs = {
+    noise1_coeffs = {
         'mu': 0.0,
         'theta': 0.25,
         'sigma': 0.1,
-        'name': 'B',
+        'name': 'N1',
         'color': '#00ff00'
     }
-    sig3_coeffs = {
-        'mu': [0.0, 1.0],
-        'theta': [0.25, 0.5],
-        'sigma': [0.1, 0.01],
-        'name': ['B', 'C'],
-        'color': ['#00ff00', '#0000ff']
+    noise2_coeffs = {
+        'mu': 0.0,
+        'theta': 0.05,
+        'sigma': 0.2,
+        'name': 'N2',
+        'color': '#00ffff'
     }
-    sig_coeffs = {
-        'waves': [sig1_coeffs],
-        'noise': sig3_coeffs
+    noise3_coeffs = {
+        'mu': 0.0,
+        'theta': 0.02,
+        'sigma': 0.5,
+        'name': 'N3',
+        'color': '#ff00ff'
+    }
+
+    sigs_coeffs = {
+        'waves': [
+            wave1_coeffs,
+        ],
+        'noise': [
+            noise1_coeffs,
+            noise2_coeffs
+        ]
     }
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
         'period': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
-        'phase': {'mean': 0, 'delta': np.pi},
+        'phase': {'mean': 0, 'delta': 1},
     }
 
     time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,
-        sig_coeffs,
+        sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
         method='sliding',
@@ -172,18 +185,18 @@ def test_create_from_1_waves_2_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sig_coeffs['waves']) + 2
+    assert len(msig.signals) == len(sigs_coeffs['waves']) + 2
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sig_coeffs['waves']) + 2)
-    assert np.all(msig.signal_names == ['A', 'B', 'C'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs['waves']) + 2)
+    assert np.all(msig.signal_names == ['A', 'N1', 'N2'])
+    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#00ffff'])
 
 
 def test_create_from_2_waves_boxcar():
-    sig1_coeffs = {
+    wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
@@ -191,7 +204,7 @@ def test_create_from_2_waves_boxcar():
         'name': 'A',
         'color': '#ff0000'
     }
-    sig2_coeffs = {
+    wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -199,7 +212,7 @@ def test_create_from_2_waves_boxcar():
         'name': 'B',
         'color': '#00ff00'
     }
-    sig3_coeffs = {
+    wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
@@ -207,13 +220,13 @@ def test_create_from_2_waves_boxcar():
         'name': 'C',
         'color': '#0000ff'
     }
-    sig_coeffs = {'waves': [sig1_coeffs, sig2_coeffs, sig3_coeffs]}
+    sigs_coeffs = {'waves': [wave1_coeffs, wave2_coeffs, wave3_coeffs]}
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
         'period': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
-        'phase': {'mean': 0, 'delta': np.pi},
+        'phase': {'mean': 0, 'delta': 1},
     }
 
     time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
@@ -221,7 +234,7 @@ def test_create_from_2_waves_boxcar():
     with pytest.raises(AssertionError):
         MixedSignal(
             time_coeffs,
-            sig_coeffs,
+            sigs_coeffs,
             msig_coeffs=msig_coeffs,
             n_timesteps=n_timesteps,
             method='boxcar',
@@ -231,10 +244,10 @@ def test_create_from_2_waves_boxcar():
     time_coeffs = {'start': 0, 'stop': 150, 'n_timestamps': 801, 'delta': 0}
     n_timesteps = 9
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         msig = MixedSignal(
             time_coeffs,
-            sig_coeffs,
+            sigs_coeffs,
             msig_coeffs=msig_coeffs,
             n_timesteps=n_timesteps,
             method='boxcrap',
@@ -244,20 +257,20 @@ def test_create_from_2_waves_boxcar():
 
     msig = MixedSignal(
         time_coeffs,
-        sig_coeffs,
+        sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
         method='boxcar',
         run_label='test'
     )
     # msig.save_config()
-    assert len(msig.signals) == len(sig_coeffs['waves'])
+    assert len(msig.signals) == len(sigs_coeffs['waves'])
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert time_coeffs['n_timestamps'] % n_timesteps == 0
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] / n_timesteps, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] / n_timesteps, len(sig_coeffs['waves']))
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] / n_timesteps, len(sigs_coeffs['waves']))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -284,7 +297,7 @@ def datadir(tmpdir, request):
 
 
 def test_generate_config(datadir):
-    sig1_coeffs = {
+    wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
@@ -292,7 +305,7 @@ def test_generate_config(datadir):
         'name': 'A',
         'color': '#ff0000'
     }
-    sig2_coeffs = {
+    wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -300,7 +313,7 @@ def test_generate_config(datadir):
         'name': 'B',
         'color': '#00ff00'
     }
-    sig3_coeffs = {
+    wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'period': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
@@ -308,13 +321,13 @@ def test_generate_config(datadir):
         'name': 'C',
         'color': '#0000ff'
     }
-    sig_coeffs = {'waves': [sig1_coeffs, sig2_coeffs, sig3_coeffs]}
+    sig_coeffs = {'waves': [wave1_coeffs, wave2_coeffs, wave3_coeffs]}
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
         'period': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
-        'phase': {'mean': 0, 'delta': np.pi},
+        'phase': {'mean': 0, 'delta': 1},
     }
 
     time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
@@ -336,3 +349,7 @@ def test_generate_config(datadir):
         signal_config_test = json.load(ifs)
 
     assert signal_config_truth == signal_config_test
+
+
+def test_generate_sliding():
+    assert True
