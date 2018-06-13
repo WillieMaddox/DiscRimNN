@@ -3,7 +3,6 @@ import json
 import numpy as np
 from .utils import timesequence_generator
 from .waves import Wave, WaveProperty
-from .noise import OUNoise
 
 
 class MixedSignal:
@@ -54,19 +53,9 @@ class MixedSignal:
             self.mixed_signal_props[prop_name] = WaveProperty(**coeffs)
 
         self.signal_objects = []
-        for sig, coeffs in sigs_coeffs.items():
-            if sig == 'waves':
-                for c in coeffs:
-                    self.signal_objects.append(Wave(self.timestamps, **c))
-            elif sig == 'noise':
-                noise_coeffs = {}
-                for c in coeffs:
-                    for k, v in c.items():
-                        if k not in noise_coeffs:
-                            noise_coeffs[k] = []
-                        noise_coeffs[k].append(v)
-
-                self.signal_objects.append(OUNoise(self.n_timestamps, **noise_coeffs))
+        for coeffs in sigs_coeffs:
+            for c in coeffs:
+                self.signal_objects.append(Wave(self.timestamps, **c))
 
         self.n_signals = len(self.signals)
 
