@@ -1,5 +1,5 @@
-import numpy as np
 import pytest
+import numpy as np
 from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st

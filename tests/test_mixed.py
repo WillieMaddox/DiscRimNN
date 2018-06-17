@@ -17,24 +17,24 @@ def test_create_from_3_waves_0_noise():
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
+        'color': '#ff0000',
         'name': 'A',
-        'color': '#ff0000'
     }
     wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
+        'color': '#00ff00',
         'name': 'B',
-        'color': '#00ff00'
     }
     wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
+        'color': '#0000ff',
         'name': 'C',
-        'color': '#0000ff'
     }
     sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
@@ -73,16 +73,16 @@ def test_create_from_2_waves_1_noise():
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
+        'color': '#ff0000',
         'name': 'A',
-        'color': '#ff0000'
     }
     wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
+        'color': '#00ff00',
         'name': 'B',
-        'color': '#00ff00'
     }
     sigs_coeffs = [wave1_coeffs, wave2_coeffs]
 
@@ -121,8 +121,8 @@ def test_create_from_1_waves_2_noise():
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
+        'color': '#ff0000',
         'name': 'A',
-        'color': '#ff0000'
     }
     sigs_coeffs = [wave1_coeffs]
 
