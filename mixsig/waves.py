@@ -57,6 +57,7 @@ class Wave:
         phase = {} if phase is None else phase
         self._phase = WaveProperty(**phase)
 
+        self.signal_noise = None
         noise = {} if noise is None else noise
         if 'uniform' in noise:
             self.signal_noise_generator = uniform_noise_generator(**noise['uniform'])
@@ -64,7 +65,6 @@ class Wave:
             self.signal_noise_generator = normal_noise_generator(**noise['normal'])
         else:
             self.signal_noise_generator = no_noise()
-        self.signal_noise = self.signal_noise_generator(len(self.timestamps))
 
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color

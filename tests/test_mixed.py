@@ -36,7 +36,7 @@ def test_create_from_3_waves_0_noise():
         'name': 'C',
         'color': '#0000ff'
     }
-    sigs_coeffs = {'waves': [wave1_coeffs, wave2_coeffs, wave3_coeffs]}
+    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
@@ -57,12 +57,12 @@ def test_create_from_3_waves_0_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs['waves'])
+    assert len(msig.signals) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs['waves']))
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -84,17 +84,7 @@ def test_create_from_2_waves_1_noise():
         'name': 'B',
         'color': '#00ff00'
     }
-    noise1_coeffs = {
-        'mu': 1.0,
-        'theta': 0.5,
-        'sigma': 0.01,
-        'name': 'C',
-        'color': '#0000ff'
-    }
-    sigs_coeffs = {
-        'waves': [wave1_coeffs, wave2_coeffs],
-        'noise': [noise1_coeffs]
-    }
+    sigs_coeffs = [wave1_coeffs, wave2_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
@@ -115,14 +105,14 @@ def test_create_from_2_waves_1_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs['waves']) + 1
+    assert len(msig.signals) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs['waves']) + 1)
-    assert np.all(msig.signal_names == ['A', 'B', 'C'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert np.all(msig.signal_names == ['A', 'B'])
+    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00'])
 
 
 def test_create_from_1_waves_2_noise():
@@ -134,37 +124,7 @@ def test_create_from_1_waves_2_noise():
         'name': 'A',
         'color': '#ff0000'
     }
-    noise1_coeffs = {
-        'mu': 0.0,
-        'theta': 0.25,
-        'sigma': 0.1,
-        'name': 'N1',
-        'color': '#00ff00'
-    }
-    noise2_coeffs = {
-        'mu': 0.0,
-        'theta': 0.05,
-        'sigma': 0.2,
-        'name': 'N2',
-        'color': '#00ffff'
-    }
-    noise3_coeffs = {
-        'mu': 0.0,
-        'theta': 0.02,
-        'sigma': 0.5,
-        'name': 'N3',
-        'color': '#ff00ff'
-    }
-
-    sigs_coeffs = {
-        'waves': [
-            wave1_coeffs,
-        ],
-        'noise': [
-            noise1_coeffs,
-            noise2_coeffs
-        ]
-    }
+    sigs_coeffs = [wave1_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
@@ -185,17 +145,17 @@ def test_create_from_1_waves_2_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs['waves']) + 2
+    assert len(msig.signals) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs['waves']) + 2)
-    assert np.all(msig.signal_names == ['A', 'N1', 'N2'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#00ffff'])
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert np.all(msig.signal_names == ['A'])
+    assert np.all(msig.signal_colors == ['#ff0000'])
 
 
-def test_create_from_2_waves_boxcar():
+def test_create_from_3_waves_boxcar():
     wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
@@ -220,7 +180,7 @@ def test_create_from_2_waves_boxcar():
         'name': 'C',
         'color': '#0000ff'
     }
-    sigs_coeffs = {'waves': [wave1_coeffs, wave2_coeffs, wave3_coeffs]}
+    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
@@ -245,7 +205,7 @@ def test_create_from_2_waves_boxcar():
     n_timesteps = 9
 
     with pytest.raises(AssertionError):
-        msig = MixedSignal(
+        MixedSignal(
             time_coeffs,
             sigs_coeffs,
             msig_coeffs=msig_coeffs,
@@ -253,7 +213,6 @@ def test_create_from_2_waves_boxcar():
             method='boxcrap',
             run_label='test'
         )
-        msig.generate()
 
     msig = MixedSignal(
         time_coeffs,
@@ -264,13 +223,13 @@ def test_create_from_2_waves_boxcar():
         run_label='test'
     )
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs['waves'])
+    assert len(msig.signals) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert time_coeffs['n_timestamps'] % n_timesteps == 0
     assert msig.inputs.shape == (time_coeffs['n_timestamps'] / n_timesteps, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] / n_timesteps, len(sigs_coeffs['waves']))
+    assert msig.labels.shape == (time_coeffs['n_timestamps'] / n_timesteps, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -321,7 +280,7 @@ def test_generate_config(datadir):
         'name': 'C',
         'color': '#0000ff'
     }
-    sig_coeffs = {'waves': [wave1_coeffs, wave2_coeffs, wave3_coeffs]}
+    sig_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},

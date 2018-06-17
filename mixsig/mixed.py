@@ -54,8 +54,7 @@ class MixedSignal:
 
         self.signal_objects = []
         for coeffs in sigs_coeffs:
-            for c in coeffs:
-                self.signal_objects.append(Wave(self.timestamps, **c))
+            self.signal_objects.append(Wave(self.timestamps, **coeffs))
 
         self.n_signals = len(self.signals)
 
