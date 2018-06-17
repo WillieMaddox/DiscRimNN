@@ -30,8 +30,8 @@ class MixedSignal:
         self.sequence_generator = timesequence_generator(**time_coeffs)
         self.timestamps = self.sequence_generator()
         self.n_timestamps = len(self.timestamps)
-        self.time_start = time_coeffs['start']
-        self.time_stop = time_coeffs['stop']
+        self.time_start = time_coeffs['t_min']
+        self.time_stop = time_coeffs['t_max']
         self.n_timesteps = n_timesteps
 
         self.name = 'Mixed'

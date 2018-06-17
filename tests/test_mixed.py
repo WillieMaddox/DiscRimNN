@@ -45,7 +45,7 @@ def test_create_from_3_waves_0_noise():
         'phase': {'mean': 0, 'delta': 1},
     }
 
-    time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
+    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,
@@ -93,7 +93,7 @@ def test_create_from_2_waves_1_noise():
         'phase': {'mean': 0, 'delta': 1},
     }
 
-    time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
+    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,
@@ -133,7 +133,7 @@ def test_create_from_1_waves_2_noise():
         'phase': {'mean': 0, 'delta': 1},
     }
 
-    time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
+    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,
@@ -189,7 +189,7 @@ def test_create_from_3_waves_boxcar():
         'phase': {'mean': 0, 'delta': 1},
     }
 
-    time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
+    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     with pytest.raises(AssertionError):
         MixedSignal(
@@ -201,7 +201,7 @@ def test_create_from_3_waves_boxcar():
             run_label='test'
         )
 
-    time_coeffs = {'start': 0, 'stop': 150, 'n_timestamps': 801, 'delta': 0}
+    time_coeffs = {'t_min': 0, 't_max': 150, 'n_timestamps': 801}
     n_timesteps = 9
 
     with pytest.raises(AssertionError):
@@ -289,7 +289,7 @@ def test_generate_config(datadir):
         'phase': {'mean': 0, 'delta': 1},
     }
 
-    time_coeffs = {'start': 0, 'stop': 75, 'n_timestamps': 301, 'delta': 0}
+    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
         time_coeffs,

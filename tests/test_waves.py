@@ -40,7 +40,7 @@ def test_waveproperty_generator(wp):
 
 
 def test_wave_default_kwargs():
-    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     wave = Wave(ts)
     assert wave.amplitude == 0
@@ -51,7 +51,7 @@ def test_wave_default_kwargs():
 
 
 def test_wave_mean():
-    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1, 'delta': 0},
@@ -78,7 +78,7 @@ def test_wave_mean():
 
 
 def test_wave_with_delayed_size():
-    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
@@ -99,7 +99,7 @@ def test_wave_with_no_timesequence_arg():
 
 
 def test_wave_with_uniform_noise():
-    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
@@ -112,7 +112,7 @@ def test_wave_with_uniform_noise():
 
 
 def test_wave_with_normal_noise():
-    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
@@ -125,7 +125,7 @@ def test_wave_with_normal_noise():
 
 
 def test_wave_with_no_noise():
-    sequence_generator = timesequence_generator(0.0, 50.0, 201)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
@@ -134,3 +134,33 @@ def test_wave_with_no_noise():
     wave = Wave(ts, **params)
     wave.generate()
     assert wave.signal_noise == 0
+
+
+@pytest.mark.parametrize('n_min,n_max,noise_type,delta,pareto_shape', [
+    (None, 200, None, 0.5, None),
+    (None, 200, None, None, None),
+    (100, 200, None, None, None),
+    (None, 200, 'jitter', 0.5, None),
+    (None, 200, 'jitter', None, None),
+    (100, 200, 'jitter', None, None),
+    (None, 200, 'pareto', None, 3),
+    (None, 200, 'pareto', None, None),
+    (100, 200, 'pareto', None, None),
+], ids=repr)
+def test_wave_with_timestamp_noise(n_min, n_max, noise_type, delta, pareto_shape):
+    sequence_generator = timesequence_generator(
+        t_min=0.0,
+        t_max=50.0,
+        n_max=n_max,
+        n_min=n_min,
+        noise_type=noise_type,
+        delta=delta,
+        pareto_shape=pareto_shape)
+    ts = sequence_generator()
+    params = {
+        'amplitude': {'mean': 1},
+        'frequency': {'mean': 1},
+    }
+    wave = Wave(ts, **params)
+    wave.generate()
+    assert len(wave.sample) == len(ts)

@@ -1,9 +1,12 @@
+import types
+from math import isclose
 import numpy as np
 from .utils import name_generator
 from .utils import color_generator
 from .utils import normal_noise_generator
 from .utils import uniform_noise_generator
 from .utils import no_noise
+from .utils import timesequence_generator
 
 
 class WaveProperty:
@@ -44,16 +47,22 @@ class Wave:
                  color=None,
                  name=None):
 
-        self.timestamps = timestamps
+        if isinstance(timestamps, types.FunctionType):
+            self._timestamps = timestamps
+        else:
+            self._timestamps = lambda: timestamps
 
         self._sample = None
+
         amplitude = {} if amplitude is None else amplitude
         self._amplitude = WaveProperty(**amplitude)
 
         frequency = {} if frequency is None else frequency
         self._frequency = WaveProperty(**frequency)
+
         offset = {} if offset is None else offset
         self._offset = WaveProperty(**offset)
+
         phase = {} if phase is None else phase
         self._phase = WaveProperty(**phase)
 
@@ -68,6 +77,10 @@ class Wave:
 
         self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
+
+    @property
+    def timestamps(self):
+        return self._timestamps()
 
     @property
     def amplitude(self):

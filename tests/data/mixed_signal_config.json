@@ -2,75 +2,72 @@
     "run_label": "test",
     "method": "sliding",
     "time_coeffs": {
-        "start": 0,
-        "stop": 75,
-        "n_timestamps": 301,
-        "delta": 0
+        "t_min": 0,
+        "t_max": 75,
+        "n_timestamps": 301
     },
-    "sigs_coeffs": {
-        "waves": [
-            {
-                "amplitude": {
-                    "mean": 1.0,
-                    "delta": 0
-                },
-                },
-                "offset": {
-                    "mean": -0.1,
-                    "delta": 0
-                },
-                "phase": {
-                    "mean": 0,
-                    "delta": 0
-                },
-                "name": "A",
-                "color": "#ff0000"
-            },
-            "frequency": {
-                "mean": 1,
-                "delta": 0
-            {
-                "amplitude": {
-                    "mean": 1.0,
-                    "delta": 0
-                },
-                "offset": {
-                    "mean": 0.0,
-                    "delta": 0
-                },
-                "phase": {
-                    "mean": 0,
-                    "delta": 0
-                },
-                "name": "B",
-                "color": "#00ff00"
-            },
-            {
-                "amplitude": {
-                    "mean": 1.0,
-                    "delta": 0
-                },
-                "offset": {
-                    "mean": 0.1,
-                    "delta": 0
-                },
-                "phase": {
-                    "mean": 0,
-                    "delta": 0
-                },
-                "name": "C",
-                "color": "#0000ff"
-            }
-        ]
-    },
-            "frequency": {
-                "mean": 1,
+    "sigs_coeffs": [
+        {
+            "amplitude": {
+                "mean": 1.0,
                 "delta": 0
             },
             "frequency": {
                 "mean": 1,
                 "delta": 0
             },
+            "offset": {
+                "mean": -0.1,
+                "delta": 0
+            },
+            "phase": {
+                "mean": 0,
+                "delta": 0
+            },
+            "name": "A",
+            "color": "#ff0000"
+        },
+        {
+            "amplitude": {
+                "mean": 1.0,
+                "delta": 0
+            },
+            "frequency": {
+                "mean": 1,
+                "delta": 0
+            },
+            "offset": {
+                "mean": 0.0,
+                "delta": 0
+            },
+            "phase": {
+                "mean": 0,
+                "delta": 0
+            },
+            "name": "B",
+            "color": "#00ff00"
+        },
+        {
+            "amplitude": {
+                "mean": 1.0,
+                "delta": 0
+            },
+            "frequency": {
+                "mean": 1,
+                "delta": 0
+            },
+            "offset": {
+                "mean": 0.1,
+                "delta": 0
+            },
+            "phase": {
+                "mean": 0,
+                "delta": 0
+            },
+            "name": "C",
+            "color": "#0000ff"
+        }
+    ],
     "msig_coeffs": {
         "amplitude": {
             "mean": 10,
