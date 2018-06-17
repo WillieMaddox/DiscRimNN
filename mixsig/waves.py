@@ -37,7 +37,7 @@ class Wave:
     def __init__(self,
                  timestamps,
                  amplitude=None,
-                 period=None,
+                 frequency=None,
                  offset=None,
                  phase=None,
                  noise=None,
@@ -49,8 +49,9 @@ class Wave:
         self._sample = None
         amplitude = {} if amplitude is None else amplitude
         self._amplitude = WaveProperty(**amplitude)
-        period = {} if period is None else period
-        self._period = WaveProperty(**period)
+
+        frequency = {} if frequency is None else frequency
+        self._frequency = WaveProperty(**frequency)
         offset = {} if offset is None else offset
         self._offset = WaveProperty(**offset)
         phase = {} if phase is None else phase
@@ -73,8 +74,8 @@ class Wave:
         return self._amplitude()
 
     @property
-    def period(self):
-        return self._period()
+    def frequency(self):
+        return self._frequency()
 
     @property
     def offset(self):
@@ -98,9 +99,9 @@ class Wave:
         amplitude = self._amplitude.generate()
         if 'amplitude' in kwargs:
             amplitude *= kwargs['amplitude']
-        period = self._period.generate()
-        if 'period' in kwargs:
-            period *= kwargs['period']
+        frequency = self._frequency.generate()
+        if 'frequency' in kwargs:
+            frequency *= kwargs['frequency']
         offset = self._offset.generate()
         if 'offset' in kwargs:
             offset += kwargs['offset']
@@ -109,9 +110,9 @@ class Wave:
             phase += kwargs['phase']
 
         self.signal_noise = self.signal_noise_generator(len(self.timestamps))
-        self._sample = offset + amplitude * np.sin(2.0 * np.pi * (self.timestamps / period - phase)) + self.signal_noise
+        self._sample = amplitude * np.sin(2.0 * np.pi * (self.timestamps * frequency - phase)) + offset + self.signal_noise
         return self._sample
 
     def __repr__(self):
-        return 'Wave(amplitude={}, period={}, offset={}, phase={})'.format(self.amplitude, self.period, self.offset, self.phase)
+        return 'Wave(amplitude={}, frequency={}, offset={}, phase={})'.format(self.amplitude, self.frequency, self.offset, self.phase)
 

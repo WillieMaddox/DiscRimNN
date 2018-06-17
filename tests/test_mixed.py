@@ -14,7 +14,7 @@ from mixsig.mixed import MixedSignal
 def test_create_from_3_waves_0_noise():
     wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'A',
@@ -22,7 +22,7 @@ def test_create_from_3_waves_0_noise():
     }
     wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'B',
@@ -30,7 +30,7 @@ def test_create_from_3_waves_0_noise():
     }
     wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'C',
@@ -40,7 +40,7 @@ def test_create_from_3_waves_0_noise():
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
-        'period': {'mean': 25, 'delta': 0},
+        'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
     }
@@ -70,7 +70,7 @@ def test_create_from_3_waves_0_noise():
 def test_create_from_2_waves_1_noise():
     wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'A',
@@ -78,7 +78,7 @@ def test_create_from_2_waves_1_noise():
     }
     wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'B',
@@ -98,7 +98,7 @@ def test_create_from_2_waves_1_noise():
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
-        'period': {'mean': 25, 'delta': 0},
+        'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
     }
@@ -128,7 +128,7 @@ def test_create_from_2_waves_1_noise():
 def test_create_from_1_waves_2_noise():
     wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'A',
@@ -168,7 +168,7 @@ def test_create_from_1_waves_2_noise():
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
-        'period': {'mean': 25, 'delta': 0},
+        'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
     }
@@ -198,7 +198,7 @@ def test_create_from_1_waves_2_noise():
 def test_create_from_2_waves_boxcar():
     wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'A',
@@ -206,7 +206,7 @@ def test_create_from_2_waves_boxcar():
     }
     wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'B',
@@ -214,7 +214,7 @@ def test_create_from_2_waves_boxcar():
     }
     wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'C',
@@ -224,7 +224,7 @@ def test_create_from_2_waves_boxcar():
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
-        'period': {'mean': 25, 'delta': 0},
+        'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
     }
@@ -299,7 +299,7 @@ def datadir(tmpdir, request):
 def test_generate_config(datadir):
     wave1_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': -0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'A',
@@ -307,7 +307,7 @@ def test_generate_config(datadir):
     }
     wave2_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'B',
@@ -315,7 +315,7 @@ def test_generate_config(datadir):
     }
     wave3_coeffs = {
         'amplitude': {'mean': 1.0, 'delta': 0},
-        'period': {'mean': 1, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
         'phase': {'mean': 0, 'delta': 0},
         'name': 'C',
@@ -325,7 +325,7 @@ def test_generate_config(datadir):
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
-        'period': {'mean': 25, 'delta': 0},
+        'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
     }

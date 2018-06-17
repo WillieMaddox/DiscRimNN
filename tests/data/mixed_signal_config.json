@@ -14,9 +14,6 @@
                     "mean": 1.0,
                     "delta": 0
                 },
-                "period": {
-                    "mean": 1,
-                    "delta": 0
                 },
                 "offset": {
                     "mean": -0.1,
@@ -29,13 +26,12 @@
                 "name": "A",
                 "color": "#ff0000"
             },
+            "frequency": {
+                "mean": 1,
+                "delta": 0
             {
                 "amplitude": {
                     "mean": 1.0,
-                    "delta": 0
-                },
-                "period": {
-                    "mean": 1,
                     "delta": 0
                 },
                 "offset": {
@@ -54,10 +50,6 @@
                     "mean": 1.0,
                     "delta": 0
                 },
-                "period": {
-                    "mean": 1,
-                    "delta": 0
-                },
                 "offset": {
                     "mean": 0.1,
                     "delta": 0
@@ -71,12 +63,20 @@
             }
         ]
     },
+            "frequency": {
+                "mean": 1,
+                "delta": 0
+            },
+            "frequency": {
+                "mean": 1,
+                "delta": 0
+            },
     "msig_coeffs": {
         "amplitude": {
             "mean": 10,
             "delta": 2
         },
-        "period": {
+        "frequency": {
             "mean": 25,
             "delta": 0
         },

@@ -44,10 +44,10 @@ def test_wave_default_kwargs():
     ts = sequence_generator()
     wave = Wave(ts)
     assert wave.amplitude == 0
-    assert wave.period == 0
+    assert wave.frequency == 0
     assert wave.offset == 0
     assert wave.phase == 0
-    assert wave.__repr__() == 'Wave(amplitude=0.0, period=0.0, offset=0.0, phase=0.0)'
+    assert wave.__repr__() == 'Wave(amplitude=0.0, frequency=0.0, offset=0.0, phase=0.0)'
 
 
 def test_wave_mean():
@@ -55,7 +55,7 @@ def test_wave_mean():
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1, 'delta': 0},
-        'period': {'mean': 5, 'delta': 0},
+        'frequency': {'mean': 5, 'delta': 0},
         'offset': {'mean': -3, 'delta': 0},
         'phase': {'mean': 2, 'delta': 0},
         'name': 'A',
@@ -64,14 +64,14 @@ def test_wave_mean():
     wave = Wave(ts, **params)
     assert np.all(wave.sample == wave())
     assert wave.amplitude == 1
-    assert wave.period == 5
+    assert wave.frequency == 5
     assert wave.offset == -3
     assert wave.phase == 2
     assert wave.name == 'A'
     assert wave.color == '#ff0000'
-    wave.generate(amplitude=1, period=1, offset=1, phase=1)
+    wave.generate(amplitude=1, frequency=1, offset=1, phase=1)
     assert wave.amplitude == 1
-    assert wave.period == 5
+    assert wave.frequency == 5
     assert wave.offset == -3
     assert wave.phase == 2
     assert wave.signal_noise == 0
@@ -82,7 +82,7 @@ def test_wave_with_delayed_size():
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
-        'period': {'mean': 1},
+        'frequency': {'mean': 1},
     }
     wave = Wave(ts, **params)
     w0 = wave.generate()
@@ -92,7 +92,7 @@ def test_wave_with_delayed_size():
 def test_wave_with_no_timesequence_arg():
     params = {
         'amplitude': {'mean': 1},
-        'period': {'mean': 1},
+        'frequency': {'mean': 1},
     }
     with pytest.raises(TypeError):
         Wave(**params)
@@ -103,7 +103,7 @@ def test_wave_with_uniform_noise():
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
-        'period': {'mean': 1},
+        'frequency': {'mean': 1},
         'noise': {'uniform': {'mu': 0.0, 'delta': 0.5}},
     }
     wave = Wave(ts, **params)
@@ -116,7 +116,7 @@ def test_wave_with_normal_noise():
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
-        'period': {'mean': 1},
+        'frequency': {'mean': 1},
         'noise': {'normal': {'mu': 0.0, 'sigma': 0.5}},
     }
     wave = Wave(ts, **params)
@@ -129,7 +129,7 @@ def test_wave_with_no_noise():
     ts = sequence_generator()
     params = {
         'amplitude': {'mean': 1},
-        'period': {'mean': 1},
+        'frequency': {'mean': 1},
     }
     wave = Wave(ts, **params)
     wave.generate()
