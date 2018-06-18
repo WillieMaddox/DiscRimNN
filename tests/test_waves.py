@@ -31,7 +31,6 @@ waveproperty = st.builds(
 def test_waveproperty_output_is_float(wp):
     assert isinstance(wp, float)
     assert isinstance(wp(), float)
-    # assert isinstance(wp.generate(), float)
 
 
 @given(waveproperty)
@@ -70,9 +69,7 @@ def test_waveproperty_generator_b(Wp, mean, delta):
 
 
 def test_wave_default_kwargs():
-    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
-    ts = sequence_generator()
-    wave = Wave(ts)
+    wave = Wave()
     assert wave.amplitude == 1
     assert wave.frequency == 1
     assert wave.offset == 0
@@ -91,19 +88,19 @@ def test_wave_mean():
         'name': 'A',
         'color': '#ff0000'
     }
-    wave = Wave(ts, **params)
+    wave = Wave(**params)
     assert wave.amplitude == 1
     assert wave.frequency == 5
     assert wave.offset == -3
     assert wave.phase == 2
     assert wave.name == 'A'
     assert wave.color == '#ff0000'
-    wave.generate(amplitude=1, frequency=1, offset=1, phase=1)
+    wave.generate(ts, amplitude=1, frequency=1, offset=1, phase=1)
     assert wave.amplitude == 1
     assert wave.frequency == 5
     assert wave.offset == -3
     assert wave.phase == 2
-    assert wave.signal_noise == 0
+    assert wave.noise == 0
 
 
 def test_wave_called_directly():
@@ -113,9 +110,9 @@ def test_wave_called_directly():
         'amplitude': {'mean': 2},
         'frequency': {'mean': 2},
     }
-    wave = Wave(ts, **params)
-    w0 = wave()
-    assert np.all(w0 == wave())
+    wave = Wave(**params)
+    w0 = wave(ts)
+    assert np.all(w0 == wave(ts))
     assert len(w0) == len(ts)
 
 
@@ -126,18 +123,19 @@ def test_wave_with_delayed_size():
         'amplitude': {'mean': 2},
         'frequency': {'mean': 2},
     }
-    wave = Wave(ts, **params)
-    w0 = wave.generate()
-    assert len(w0) == len(ts)
+    wave = Wave(**params)
+    wave.generate(ts)
+    assert len(wave.sample) == len(ts)
 
 
-def test_wave_with_no_timesequence_arg():
+def test_wave_generate_with_no_timesequence_arg():
     params = {
         'amplitude': {'mean': 1},
         'frequency': {'mean': 1},
     }
     with pytest.raises(TypeError):
-        Wave(**params)
+        wave = Wave(**params)
+        wave.generate()
 
 
 def test_wave_with_uniform_noise():
@@ -148,9 +146,9 @@ def test_wave_with_uniform_noise():
         'frequency': {'mean': 1},
         'noise': {'uniform': {'mu': 0.0, 'delta': 0.5}},
     }
-    wave = Wave(ts, **params)
-    wave.generate()
-    assert len(wave.signal_noise) == len(ts)
+    wave = Wave(**params)
+    wave.generate(ts)
+    assert len(wave.noise) == len(ts)
 
 
 def test_wave_with_normal_noise():
@@ -161,9 +159,9 @@ def test_wave_with_normal_noise():
         'frequency': {'mean': 1},
         'noise': {'normal': {'mu': 0.0, 'sigma': 0.5}},
     }
-    wave = Wave(ts, **params)
-    wave.generate()
-    assert len(wave.signal_noise) == len(ts)
+    wave = Wave(**params)
+    wave.generate(ts)
+    assert len(wave.noise) == len(ts)
 
 
 def test_wave_with_no_noise():
@@ -173,9 +171,9 @@ def test_wave_with_no_noise():
         'amplitude': {'mean': 1},
         'frequency': {'mean': 1},
     }
-    wave = Wave(ts, **params)
-    wave.generate()
-    assert wave.signal_noise == 0
+    wave = Wave(**params)
+    wave.generate(ts)
+    assert wave.noise == 0
 
 
 @pytest.mark.parametrize('n_min,n_max,noise_type,delta,pareto_shape', [
@@ -203,6 +201,6 @@ def test_wave_with_timestamp_noise(n_min, n_max, noise_type, delta, pareto_shape
         'amplitude': {'mean': 1},
         'frequency': {'mean': 1},
     }
-    wave = Wave(ts, **params)
-    wave.generate()
-    assert len(wave()) == len(ts)
+    wave = Wave(**params)
+    wave.generate(ts)
+    assert len(wave.sample) == len(ts)

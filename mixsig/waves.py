@@ -104,7 +104,7 @@ class Phase(WaveProperty):
 
 class Wave:
     def __init__(self,
-                 timestamps,
+                 time=None,
                  amplitude=None,
                  frequency=None,
                  offset=None,
@@ -113,12 +113,11 @@ class Wave:
                  color=None,
                  name=None):
 
-        if isinstance(timestamps, types.FunctionType):
-            self._timestamps = timestamps
-        else:
-            self._timestamps = lambda: timestamps
-
         self._sample = None
+        self.timestamps = None
+
+        self._timestamp_generator = timesequence_generator(**time) if time is not None else lambda: None
+        self.is_independent = time is not None
 
         amplitude = {} if amplitude is None else amplitude
         self.amplitude = Amplitude(**amplitude)
@@ -132,37 +131,48 @@ class Wave:
         phase = {} if phase is None else phase
         self.phase = Phase(**phase)
 
-        self.signal_noise = None
+        self.noise = None
         noise = {} if noise is None else noise
         if 'uniform' in noise:
-            self.signal_noise_generator = uniform_noise_generator(**noise['uniform'])
+            self._noise_generator = uniform_noise_generator(**noise['uniform'])
         elif 'normal' in noise:
-            self.signal_noise_generator = normal_noise_generator(**noise['normal'])
+            self._noise_generator = normal_noise_generator(**noise['normal'])
         else:
-            self.signal_noise_generator = no_noise()
+            self._noise_generator = no_noise()
 
         self.color = color_generator() if color is None else color
         self.name = name_generator() if name is None else name
 
-    def __call__(self):
-        if self._sample is None:
-            self._sample = self.generate()
+    @property
+    def sample(self):
         return self._sample
 
     @property
-    def timestamps(self):
-        return self._timestamps()
+    def n_timestamps(self):
+        return len(self.timestamps)
 
-    def generate(self, **kwargs):
+    def __call__(self, timestamps):
+        if self.sample is None:
+            self.generate(timestamps)
+        return self.sample
 
+    # @property
+    # def timestamps(self):
+    #     return self._timestamps()
+
+    def generate(self, timestamps, **kwargs):
+
+        t = self._timestamp_generator() if self.is_independent else timestamps
         a = self.amplitude(**kwargs)
         f = self.frequency(**kwargs)
         o = self.offset(**kwargs)
         p = self.phase(**kwargs)
 
-        self.signal_noise = self.signal_noise_generator(len(self.timestamps))
-        self._sample = a * np.sin(2.0 * np.pi * (f * self.timestamps - p)) + o + self.signal_noise
-        return self._sample
+        n = self._noise_generator(len(t))
+        self._sample = a * np.sin(2.0 * np.pi * (f * t - p)) + o + n
+        self.timestamps = t
+        self.noise = n
+        # return self._sample
 
     def __repr__(self):
         return 'Wave(amplitude={}, frequency={}, offset={}, phase={})'.format(self.amplitude, self.frequency, self.offset, self.phase)

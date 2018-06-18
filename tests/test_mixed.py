@@ -56,7 +56,7 @@ def test_create_from_3_waves_0_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs)
+    assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
@@ -76,6 +76,7 @@ def test_create_from_2_waves_1_noise():
         'name': 'A',
     }
     wave2_coeffs = {
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -83,7 +84,15 @@ def test_create_from_2_waves_1_noise():
         'color': '#00ff00',
         'name': 'B',
     }
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs]
+    wave3_coeffs = {
+        'amplitude': {'mean': 1.0, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
+        'offset': {'mean': 0.1, 'delta': 0},
+        'phase': {'mean': 0, 'delta': 0},
+        'color': '#0000ff',
+        'name': 'C',
+    }
+    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
@@ -103,14 +112,14 @@ def test_create_from_2_waves_1_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs)
+    assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, window_size, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, len(sigs_coeffs))
-    assert np.all(msig.signal_names == ['A', 'B'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00'])
+    assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert msig.labels.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert np.all(msig.signal_names == ['A', 'B', 'C'])
+    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_1_waves_2_noise():
@@ -122,7 +131,25 @@ def test_create_from_1_waves_2_noise():
         'color': '#ff0000',
         'name': 'A',
     }
-    sigs_coeffs = [wave1_coeffs]
+    wave2_coeffs = {
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
+        'amplitude': {'mean': 1.0, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
+        'offset': {'mean': 0.0, 'delta': 0},
+        'phase': {'mean': 0, 'delta': 0},
+        'color': '#00ff00',
+        'name': 'B',
+    }
+    wave3_coeffs = {
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.2},
+        'amplitude': {'mean': 1.0, 'delta': 0},
+        'frequency': {'mean': 1, 'delta': 0},
+        'offset': {'mean': 0.1, 'delta': 0},
+        'phase': {'mean': 0, 'delta': 0},
+        'color': '#0000ff',
+        'name': 'C',
+    }
+    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
@@ -142,14 +169,14 @@ def test_create_from_1_waves_2_noise():
     )
 
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs)
+    assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, window_size, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, len(sigs_coeffs))
-    assert np.all(msig.signal_names == ['A'])
-    assert np.all(msig.signal_colors == ['#ff0000'])
+    assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert msig.labels.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert np.all(msig.signal_names == ['A', 'B', 'C'])
+    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_3_waves_boxcar():
@@ -223,13 +250,13 @@ def test_create_from_3_waves_boxcar():
         run_label='test'
     )
     # msig.save_config()
-    assert len(msig.signals) == len(sigs_coeffs)
+    assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig_coeffs['time']['n_timestamps'] % window_size == 0
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] / window_size, window_size, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] / window_size, len(sigs_coeffs))
+    assert msig.n_timestamps % window_size == 0
+    assert msig.inputs.shape == (msig.n_timestamps / window_size, window_size, 1)
+    assert msig.labels.shape == (msig.n_timestamps / window_size, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 

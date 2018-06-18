@@ -21,8 +21,8 @@ class MixedSignal:
                  name='Mixed'):
 
         self._signals = None
-        self._signal_names = None
-        self._signal_colors = None
+        self._wave_names = None
+        self._wave_colors = None
 
         # Should these be properties?
         self.inputs = None
@@ -43,17 +43,6 @@ class MixedSignal:
 
         if 'time' in msig_coeffs:
             self.sequence_generator = timesequence_generator(**msig_coeffs['time'])
-            self.timestamps = self.sequence_generator()
-        self.n_timestamps = len(self.timestamps)
-
-        self.t_min = msig_coeffs['time']['t_min']
-        self.t_max = msig_coeffs['time']['t_max']
-
-        if self.window_method == 'sliding':
-            self.n_samples = self.n_timestamps - self.window_size + 1
-        else:
-            assert self.n_timestamps % self.window_size == 0
-            self.n_samples = self.n_timestamps // self.window_size
 
         self.mixed_signal_props = {}
         for prop_name, coeffs in msig_coeffs.items():
@@ -70,9 +59,9 @@ class MixedSignal:
             else:
                 print(f'got unexpected msig_coeffs {prop_name}')
 
-        self.signal_objects = [Wave(self.timestamps, **coeffs) for coeffs in sigs_coeffs]
+        self.waves = [Wave(**coeffs) for coeffs in sigs_coeffs]
 
-        self.n_signals = len(self.signals)
+        self.n_signals = len(self.waves)
 
         self.config_dict = {
             'run_label': run_label,
@@ -83,10 +72,9 @@ class MixedSignal:
         }
 
         # TODO: What's the appropriate way to assign the out_dir (regular functionality, unit tests, etc.)
-        # Relative to the directory of the calling script?
-        # Relative to the directory of this module?
-        # Relative to the root of the project directory?
-
+        # TODO: Relative to the root directory of this project?
+        # TODO: Relative to the directory of the calling script?
+        # TODO: Relative to the directory of this module?
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
         os.makedirs(self.out_dir, exist_ok=True)
         self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
@@ -96,6 +84,58 @@ class MixedSignal:
         if self._signals is None:
             self._generate_signals()
         return self._signals
+
+    def _generate_signals(self):
+        """ Generate waves from property values."""
+        # generate new timestamps
+        timestamps = self.sequence_generator()
+        n_timestamps = len(timestamps)
+        classes = np.array([c for c, wave in enumerate(self.waves) if not wave.is_independent])
+        n_classes = len(classes)
+
+        shuffled_indexes = np.arange(n_timestamps)
+        np.random.shuffle(shuffled_indexes)
+        labels = np.zeros(n_timestamps, dtype=int)
+        for s in range(n_classes):
+            labels[np.where(shuffled_indexes < s * n_timestamps // n_classes)] += 1
+
+        one_hots = np.zeros((n_timestamps, n_classes), dtype=float)
+        one_hots[(np.arange(n_timestamps), labels)] = 1
+
+        # generate new mixed signal properties.
+        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
+
+        # generate new individual waves.
+        for wave in self.waves:
+            wave.generate(timestamps, **props)
+
+        signals = np.vstack([wave.sample for wave in self.waves if not wave.is_independent])
+        mixed_signal = np.sum(one_hots.T * signals, axis=0)
+
+        labels = classes[labels]
+        for c, wave in enumerate(self.waves):
+            if wave.is_independent:
+                timestamps = np.append(timestamps, wave.timestamps)
+                mixed_signal = np.append(mixed_signal, wave.sample)
+                labels = np.append(labels, np.zeros(wave.n_timestamps, dtype=int) + c)
+
+        assert len(timestamps) == len(mixed_signal) == len(labels)
+
+        sorted_indices = np.argsort(timestamps)
+
+        self.timestamps = timestamps[sorted_indices]
+        self.n_timestamps = len(self.timestamps)
+        self.mixed_signal = mixed_signal[sorted_indices]
+        self.classes = labels[sorted_indices]
+
+        self.t_min = self.timestamps[0]
+        self.t_max = self.timestamps[-1]
+
+        if self.window_method == 'sliding':
+            self.n_samples = self.n_timestamps - self.window_size + 1
+        else:
+            assert self.n_timestamps % self.window_size == 0
+            self.n_samples = self.n_timestamps // self.window_size
 
     def _create_class_distribution(self):
         """
@@ -116,26 +156,26 @@ class MixedSignal:
         self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
         self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
 
-    def _generate_signals(self):
-        """ Generate signals from property values."""
+    def _generate_signals_old(self):
+        """ Generate waves from property values."""
         # generate new timestamps
         self.timestamps = self.sequence_generator()
         # generate new values for each mixed signal property.
         props = {name: prop() for name, prop in self.mixed_signal_props.items()}
-        # generate new single signals.
-        self._signals = np.vstack([sig.generate(**props) for sig in self.signal_objects])
+        # generate new single waves.
+        self._signals = np.vstack([sig.generate(**props) for sig in self.waves])
 
     @property
     def signal_names(self):
-        if self._signal_names is None:
-            self._signal_names = np.hstack([sig.name for sig in self.signal_objects])
-        return self._signal_names
+        if self._wave_names is None:
+            self._wave_names = np.hstack([sig.name for sig in self.waves])
+        return self._wave_names
 
     @property
     def signal_colors(self):
-        if self._signal_colors is None:
-            self._signal_colors = np.hstack([sig.color for sig in self.signal_objects])
-        return self._signal_colors
+        if self._wave_colors is None:
+            self._wave_colors = np.hstack([sig.color for sig in self.waves])
+        return self._wave_colors
 
     def generate(self):
         self._generate()
@@ -149,11 +189,8 @@ class MixedSignal:
 
     def _generate(self):
 
-        self._create_class_distribution()
-        self._create_one_hots_from_classes()
         self._generate_signals()
-
-        self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
+        self._create_one_hots_from_classes()
 
         # self.inputs = np.vstack((self.timestamps, self.mixed_signal)).T
         # self.inputs = self.inputs.reshape(self.window_size, 2, 1)
