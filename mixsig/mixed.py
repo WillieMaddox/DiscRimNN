@@ -13,9 +13,9 @@ class MixedSignal:
     def __init__(self,
                  sigs_coeffs,
                  msig_coeffs=None,
-                 n_timesteps=1,
+                 window_size=1,
+                 window_method='sliding',
                  run_label='default',
-                 method='sliding',
                  net_type='RNN',
                  model='many2one'):
 
@@ -36,16 +36,16 @@ class MixedSignal:
         self.n_timestamps = len(self.timestamps)
         self.time_start = msig_coeffs['time']['t_min']
         self.time_stop = msig_coeffs['time']['t_max']
-        self.n_timesteps = n_timesteps
+        self.window_size = window_size
 
         self.name = 'Mixed'
-        self.method = method.lower()
-        assert self.method in ('sliding', 'boxcar')
-        if method.lower() == 'sliding':
-            self.n_samples = self.n_timestamps - self.n_timesteps + 1
+        self.window_method = window_method.lower()
+        assert self.window_method in ('sliding', 'boxcar')
+        if window_method.lower() == 'sliding':
+            self.n_samples = self.n_timestamps - self.window_size + 1
         else:
-            assert self.n_timestamps % self.n_timesteps == 0
-            self.n_samples = self.n_timestamps // self.n_timesteps
+            assert self.n_timestamps % self.window_size == 0
+            self.n_samples = self.n_timestamps // self.window_size
 
         self.net_type = net_type
         assert self.net_type in ('MLP', 'RNN')
@@ -73,7 +73,7 @@ class MixedSignal:
 
         self.config_dict = {
             'run_label': run_label,
-            'method': self.method,
+            'window_method': self.window_method,
             'sigs_coeffs': sigs_coeffs,
             'msig_coeffs': msig_coeffs
         }
@@ -135,12 +135,12 @@ class MixedSignal:
 
     def generate(self):
         self._generate()
-        if self.method == 'sliding':
+        if self.window_method == 'sliding':
             self.generate_sliding()
-        elif self.method == 'boxcar':
+        elif self.window_method == 'boxcar':
             self.generate_boxcar()
         else:
-            raise ValueError('improper method: {}. Use "sliding" or "boxcar"')
+            raise ValueError('improper window_method: {}. Use "sliding" or "boxcar"')
         return self.inputs, self.labels
 
     def _generate(self):
@@ -152,13 +152,13 @@ class MixedSignal:
         self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
 
         # self.inputs = np.vstack((self.timestamps, self.mixed_signal)).T
-        # self.inputs = self.inputs.reshape(self.n_timesteps, 2, 1)
-        # self.inputs = self.inputs.reshape(self.n_timesteps, 1, 2)
-        # self.inputs = self.inputs.reshape(1, self.n_timesteps, 2)
-        # self.inputs = self.inputs.reshape(self.n_timesteps, 2)
+        # self.inputs = self.inputs.reshape(self.window_size, 2, 1)
+        # self.inputs = self.inputs.reshape(self.window_size, 1, 2)
+        # self.inputs = self.inputs.reshape(1, self.window_size, 2)
+        # self.inputs = self.inputs.reshape(self.window_size, 2)
 
         # self.inputs = self.mixed_signal.reshape(self.n_timestamps, 1, 1)
-        # self.inputs = self.mixed_signal.reshape(1, self.n_timesteps, 1)
+        # self.inputs = self.mixed_signal.reshape(1, self.window_size, 1)
 
     def generate_sliding_new(self):
 
@@ -167,10 +167,10 @@ class MixedSignal:
                 # MLP: many to one
                 self.inputs = np.lib.stride_tricks.as_strided(
                     self.mixed_signal,
-                    shape=(self.n_samples, self.n_timesteps),
+                    shape=(self.n_samples, self.window_size),
                     strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize)
                 )
-                self.labels = self.one_hots[(self.n_timesteps - 1):]
+                self.labels = self.one_hots[(self.window_size - 1):]
             else:
                 raise NotImplementedError
 
@@ -179,21 +179,21 @@ class MixedSignal:
                 # RNN: many to one
                 self.inputs = np.lib.stride_tricks.as_strided(
                     self.mixed_signal,
-                    shape=(self.n_samples, self.n_timesteps, 1),
+                    shape=(self.n_samples, self.window_size, 1),
                     strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
                 )
-                self.labels = self.one_hots[(self.n_timesteps - 1):]
+                self.labels = self.one_hots[(self.window_size - 1):]
 
             elif self.model == 'many2many':
                 # RNN: many to many
                 self.inputs = np.lib.stride_tricks.as_strided(
                     self.mixed_signal,
-                    shape=(self.n_samples, self.n_timesteps, 1),
+                    shape=(self.n_samples, self.window_size, 1),
                     strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
                 )
                 self.labels = np.lib.stride_tricks.as_strided(
                     self.one_hots,
-                    shape=(self.n_samples, self.n_timesteps, self.n_signals),
+                    shape=(self.n_samples, self.window_size, self.n_signals),
                     strides=(self.n_signals * self.one_hots.strides[1], self.one_hots.strides[0], self.one_hots.strides[1]),
                 )
 
@@ -202,11 +202,11 @@ class MixedSignal:
         if self.net_type == 'MLP':
             if self.model == 'many2one':
                 # MLP: many to one
-                inputs = np.zeros((self.n_samples, self.n_timesteps))
-                for i in range(self.n_timesteps):
+                inputs = np.zeros((self.n_samples, self.window_size))
+                for i in range(self.window_size):
                     inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
                 self.inputs = inputs
-                self.labels = self.one_hots[(self.n_timesteps - 1):]
+                self.labels = self.one_hots[(self.window_size - 1):]
             else:
                 # MLP: many to many
                 raise NotImplementedError
@@ -214,48 +214,48 @@ class MixedSignal:
         else:
             if self.model == 'many2one':
                 # RNN: many to one
-                inputs = np.zeros((self.n_samples, self.n_timesteps))
-                for i in range(self.n_timesteps):
+                inputs = np.zeros((self.n_samples, self.window_size))
+                for i in range(self.window_size):
                     inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
-                self.inputs = inputs.reshape(self.n_samples, self.n_timesteps, 1)
-                self.labels = self.one_hots[(self.n_timesteps - 1):]
+                self.inputs = inputs.reshape(self.n_samples, self.window_size, 1)
+                self.labels = self.one_hots[(self.window_size - 1):]
 
             else:
                 # RNN: many to many
-                inputs = np.zeros((self.n_samples, self.n_timesteps))
-                labels = np.zeros((self.n_samples, self.n_timesteps, self.n_signals))
-                for i in range(self.n_timesteps):
+                inputs = np.zeros((self.n_samples, self.window_size))
+                labels = np.zeros((self.n_samples, self.window_size, self.n_signals))
+                for i in range(self.window_size):
                     inputs[:, i] = self.mixed_signal[i:i + self.n_samples]
                     labels[:, i] = self.one_hots[i:i + self.n_samples]
-                self.inputs = inputs.reshape(self.n_samples, self.n_timesteps, 1)
-                self.labels = labels.reshape(self.n_samples, self.n_timesteps, self.n_signals)
+                self.inputs = inputs.reshape(self.n_samples, self.window_size, 1)
+                self.labels = labels.reshape(self.n_samples, self.window_size, self.n_signals)
 
     def generate_boxcar(self):
 
         if self.net_type == 'MLP':
             if self.model == 'many2one':
                 # MLP: many to one
-                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps))
-                labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.window_size))
+                labels = self.one_hots.reshape((self.n_samples, self.window_size, self.n_signals))
                 labels = labels[:, -1, :]
                 self.labels = labels.reshape(self.n_samples, self.n_signals)
             else:
                 # MLP: many to many
-                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
-                self.labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.window_size, 1))
+                self.labels = self.one_hots.reshape((self.n_samples, self.window_size, self.n_signals))
 
         else:
             if self.model == 'many2one':
                 # RNN: many to one
-                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
-                labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.window_size, 1))
+                labels = self.one_hots.reshape((self.n_samples, self.window_size, self.n_signals))
                 labels = labels[:, -1, :]
                 self.labels = labels.reshape(self.n_samples, self.n_signals)
 
             else:
                 # RNN: many to many
-                self.inputs = self.mixed_signal.reshape((self.n_samples, self.n_timesteps, 1))
-                self.labels = self.one_hots.reshape((self.n_samples, self.n_timesteps, self.n_signals))
+                self.inputs = self.mixed_signal.reshape((self.n_samples, self.window_size, 1))
+                self.labels = self.one_hots.reshape((self.n_samples, self.window_size, self.n_signals))
 
     # def generate_batch(self, batch_size):
     #     x_batch = np.empty((batch_size, *self.inputs.shape))

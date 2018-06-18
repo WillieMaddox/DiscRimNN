@@ -123,5 +123,3 @@ def timesequence_generator(t_min=None, t_max=None, n_max=None, n_min=None, noise
                 return uniform_timestamps
 
     return gen_timesequence
-
-

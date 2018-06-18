@@ -46,12 +46,12 @@ def test_create_from_3_waves_0_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    n_timesteps = 10
+    window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        n_timesteps=n_timesteps,
-        method='sliding',
+        window_size=window_size,
+        window_method='sliding',
         run_label='test'
     )
 
@@ -60,8 +60,8 @@ def test_create_from_3_waves_0_noise():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, window_size, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -93,12 +93,12 @@ def test_create_from_2_waves_1_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    n_timesteps = 10
+    window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        n_timesteps=n_timesteps,
-        method='sliding',
+        window_size=window_size,
+        window_method='sliding',
         run_label='test'
     )
 
@@ -107,8 +107,8 @@ def test_create_from_2_waves_1_noise():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, window_size, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00'])
 
@@ -132,12 +132,12 @@ def test_create_from_1_waves_2_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    n_timesteps = 10
+    window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        n_timesteps=n_timesteps,
-        method='sliding',
+        window_size=window_size,
+        window_method='sliding',
         run_label='test'
     )
 
@@ -146,8 +146,8 @@ def test_create_from_1_waves_2_noise():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, window_size, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A'])
     assert np.all(msig.signal_colors == ['#ff0000'])
 
@@ -187,13 +187,13 @@ def test_create_from_3_waves_boxcar():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    n_timesteps = 10
+    window_size = 10
     with pytest.raises(AssertionError):
         MixedSignal(
             sigs_coeffs,
             msig_coeffs=msig_coeffs,
-            n_timesteps=n_timesteps,
-            method='boxcar',
+            window_size=window_size,
+            window_method='boxcar',
             run_label='test'
         )
 
@@ -204,22 +204,22 @@ def test_create_from_3_waves_boxcar():
         'phase': {'mean': 0, 'delta': 1},
         'time': {'t_min': 0, 't_max': 150, 'n_timestamps': 801}
     }
-    n_timesteps = 9
+    window_size = 9
 
     with pytest.raises(AssertionError):
         MixedSignal(
             sigs_coeffs,
             msig_coeffs=msig_coeffs,
-            n_timesteps=n_timesteps,
-            method='boxcrap',
+            window_size=window_size,
+            window_method='boxcrap',
             run_label='test'
         )
 
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        n_timesteps=n_timesteps,
-        method='boxcar',
+        window_size=window_size,
+        window_method='boxcar',
         run_label='test'
     )
     # msig.save_config()
@@ -227,9 +227,9 @@ def test_create_from_3_waves_boxcar():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig_coeffs['time']['n_timestamps'] % n_timesteps == 0
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] / n_timesteps, n_timesteps, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] / n_timesteps, len(sigs_coeffs))
+    assert msig_coeffs['time']['n_timestamps'] % window_size == 0
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] / window_size, window_size, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] / window_size, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -290,12 +290,12 @@ def test_generate_config(datadir):
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    n_timesteps = 10
+    window_size = 10
     msig = MixedSignal(
         sig_coeffs,
         msig_coeffs=msig_coeffs,
-        n_timesteps=n_timesteps,
-        method='sliding',
+        window_size=window_size,
+        window_method='sliding',
         run_label='test'
     )
     truth_filename = datadir('mixed_signal_config.json')

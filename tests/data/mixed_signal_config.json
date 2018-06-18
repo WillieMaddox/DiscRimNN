@@ -1,6 +1,7 @@
 {
     "run_label": "test",
-    "method": "sliding",
+    "window_size": 10,
+    "window_method": "sliding",
     "sigs_coeffs": [
         {
             "amplitude": {
