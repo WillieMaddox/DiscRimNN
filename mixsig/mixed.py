@@ -11,7 +11,6 @@ from .waves import Phase
 
 class MixedSignal:
     def __init__(self,
-                 time_coeffs,
                  sigs_coeffs,
                  msig_coeffs=None,
                  n_timesteps=1,
@@ -31,11 +30,12 @@ class MixedSignal:
         self.one_hots = None
         self.mixed_signal = None
 
-        self.sequence_generator = timesequence_generator(**time_coeffs)
-        self.timestamps = self.sequence_generator()
+        if 'time' in msig_coeffs:
+            self.sequence_generator = timesequence_generator(**msig_coeffs['time'])
+            self.timestamps = self.sequence_generator()
         self.n_timestamps = len(self.timestamps)
-        self.time_start = time_coeffs['t_min']
-        self.time_stop = time_coeffs['t_max']
+        self.time_start = msig_coeffs['time']['t_min']
+        self.time_stop = msig_coeffs['time']['t_max']
         self.n_timesteps = n_timesteps
 
         self.name = 'Mixed'
@@ -62,6 +62,8 @@ class MixedSignal:
                 self.mixed_signal_props[prop_name] = Offset(**coeffs)
             elif prop_name == 'phase':
                 self.mixed_signal_props[prop_name] = Phase(**coeffs)
+            elif prop_name == 'time':
+                pass
             else:
                 print(f'got unexpected msig_coeffs {prop_name}')
 
@@ -72,7 +74,6 @@ class MixedSignal:
         self.config_dict = {
             'run_label': run_label,
             'method': self.method,
-            'time_coeffs': time_coeffs,
             'sigs_coeffs': sigs_coeffs,
             'msig_coeffs': msig_coeffs
         }

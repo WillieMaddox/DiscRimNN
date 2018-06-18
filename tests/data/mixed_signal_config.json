@@ -1,11 +1,6 @@
 {
     "run_label": "test",
     "method": "sliding",
-    "time_coeffs": {
-        "t_min": 0,
-        "t_max": 75,
-        "n_timestamps": 301
-    },
     "sigs_coeffs": [
         {
             "amplitude": {
@@ -84,6 +79,11 @@
         "phase": {
             "mean": 0,
             "delta": 1
+        },
+        "time": {
+            "t_min": 0,
+            "t_max": 75,
+            "n_timestamps": 301
         }
     }
 }

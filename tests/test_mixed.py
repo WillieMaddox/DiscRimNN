@@ -43,12 +43,11 @@ def test_create_from_3_waves_0_noise():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
-        time_coeffs,
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
@@ -61,8 +60,8 @@ def test_create_from_3_waves_0_noise():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -91,12 +90,11 @@ def test_create_from_2_waves_1_noise():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
-        time_coeffs,
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
@@ -109,8 +107,8 @@ def test_create_from_2_waves_1_noise():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00'])
 
@@ -131,12 +129,11 @@ def test_create_from_1_waves_2_noise():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
-        time_coeffs,
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
@@ -149,8 +146,8 @@ def test_create_from_1_waves_2_noise():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, n_timesteps, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - n_timesteps + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A'])
     assert np.all(msig.signal_colors == ['#ff0000'])
 
@@ -187,13 +184,12 @@ def test_create_from_3_waves_boxcar():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     with pytest.raises(AssertionError):
         MixedSignal(
-            time_coeffs,
             sigs_coeffs,
             msig_coeffs=msig_coeffs,
             n_timesteps=n_timesteps,
@@ -201,12 +197,17 @@ def test_create_from_3_waves_boxcar():
             run_label='test'
         )
 
-    time_coeffs = {'t_min': 0, 't_max': 150, 'n_timestamps': 801}
+    msig_coeffs = {
+        'amplitude': {'mean': 10, 'delta': 2},
+        'frequency': {'mean': 25, 'delta': 0},
+        'offset': {'mean': 1, 'delta': 5},
+        'phase': {'mean': 0, 'delta': 1},
+        'time': {'t_min': 0, 't_max': 150, 'n_timestamps': 801}
+    }
     n_timesteps = 9
 
     with pytest.raises(AssertionError):
         MixedSignal(
-            time_coeffs,
             sigs_coeffs,
             msig_coeffs=msig_coeffs,
             n_timesteps=n_timesteps,
@@ -215,7 +216,6 @@ def test_create_from_3_waves_boxcar():
         )
 
     msig = MixedSignal(
-        time_coeffs,
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
@@ -227,9 +227,9 @@ def test_create_from_3_waves_boxcar():
     X, y = msig.generate()
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert time_coeffs['n_timestamps'] % n_timesteps == 0
-    assert msig.inputs.shape == (time_coeffs['n_timestamps'] / n_timesteps, n_timesteps, 1)
-    assert msig.labels.shape == (time_coeffs['n_timestamps'] / n_timesteps, len(sigs_coeffs))
+    assert msig_coeffs['time']['n_timestamps'] % n_timesteps == 0
+    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] / n_timesteps, n_timesteps, 1)
+    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] / n_timesteps, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -287,12 +287,11 @@ def test_generate_config(datadir):
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
+        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    time_coeffs = {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     n_timesteps = 10
     msig = MixedSignal(
-        time_coeffs,
         sig_coeffs,
         msig_coeffs=msig_coeffs,
         n_timesteps=n_timesteps,
