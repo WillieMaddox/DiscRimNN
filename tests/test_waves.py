@@ -92,7 +92,6 @@ def test_wave_mean():
         'color': '#ff0000'
     }
     wave = Wave(ts, **params)
-    assert np.all(wave.sample == wave())
     assert wave.amplitude == 1
     assert wave.frequency == 5
     assert wave.offset == -3
@@ -105,6 +104,19 @@ def test_wave_mean():
     assert wave.offset == -3
     assert wave.phase == 2
     assert wave.signal_noise == 0
+
+
+def test_wave_called_directly():
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
+    ts = sequence_generator()
+    params = {
+        'amplitude': {'mean': 2},
+        'frequency': {'mean': 2},
+    }
+    wave = Wave(ts, **params)
+    w0 = wave()
+    assert np.all(w0 == wave())
+    assert len(w0) == len(ts)
 
 
 def test_wave_with_delayed_size():
@@ -193,4 +205,4 @@ def test_wave_with_timestamp_noise(n_min, n_max, noise_type, delta, pareto_shape
     }
     wave = Wave(ts, **params)
     wave.generate()
-    assert len(wave.sample) == len(ts)
+    assert len(wave()) == len(ts)

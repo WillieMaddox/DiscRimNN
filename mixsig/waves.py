@@ -145,10 +145,6 @@ class Wave:
         self.name = name_generator() if name is None else name
 
     def __call__(self):
-        return self.sample
-
-    @property
-    def sample(self):
         if self._sample is None:
             self._sample = self.generate()
         return self._sample
