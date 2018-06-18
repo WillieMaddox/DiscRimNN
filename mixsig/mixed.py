@@ -17,7 +17,8 @@ class MixedSignal:
                  window_method='sliding',
                  run_label='default',
                  net_type='RNN',
-                 model='many2one'):
+                 model='many2one',
+                 name='Mixed'):
 
         self._signals = None
         self._signal_names = None
@@ -30,27 +31,29 @@ class MixedSignal:
         self.one_hots = None
         self.mixed_signal = None
 
+        self.window_size = window_size
+        self.window_method = window_method.lower()
+        self.net_type = net_type
+        self.model = model
+        self.name = name
+
+        assert self.net_type in ('MLP', 'RNN')
+        assert self.model in ('many2one', 'many2many')
+        assert self.window_method in ('sliding', 'boxcar')
+
         if 'time' in msig_coeffs:
             self.sequence_generator = timesequence_generator(**msig_coeffs['time'])
             self.timestamps = self.sequence_generator()
         self.n_timestamps = len(self.timestamps)
-        self.time_start = msig_coeffs['time']['t_min']
-        self.time_stop = msig_coeffs['time']['t_max']
-        self.window_size = window_size
 
-        self.name = 'Mixed'
-        self.window_method = window_method.lower()
-        assert self.window_method in ('sliding', 'boxcar')
-        if window_method.lower() == 'sliding':
+        self.t_min = msig_coeffs['time']['t_min']
+        self.t_max = msig_coeffs['time']['t_max']
+
+        if self.window_method == 'sliding':
             self.n_samples = self.n_timestamps - self.window_size + 1
         else:
             assert self.n_timestamps % self.window_size == 0
             self.n_samples = self.n_timestamps // self.window_size
-
-        self.net_type = net_type
-        assert self.net_type in ('MLP', 'RNN')
-        self.model = model
-        assert self.model in ('many2one', 'many2many')
 
         self.mixed_signal_props = {}
         for prop_name, coeffs in msig_coeffs.items():
@@ -73,9 +76,10 @@ class MixedSignal:
 
         self.config_dict = {
             'run_label': run_label,
-            'window_method': self.window_method,
+            'window_size': window_size,
+            'window_method': window_method,
             'sigs_coeffs': sigs_coeffs,
-            'msig_coeffs': msig_coeffs
+            'msig_coeffs': msig_coeffs,
         }
 
         # TODO: What's the appropriate way to assign the out_dir (regular functionality, unit tests, etc.)
