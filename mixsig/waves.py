@@ -155,13 +155,13 @@ class Wave:
 
     def generate(self, **kwargs):
 
-        amplitude = self.amplitude(**kwargs)
-        frequency = self.frequency(**kwargs)
-        offset = self.offset(**kwargs)
-        phase = self.phase(**kwargs)
+        a = self.amplitude(**kwargs)
+        f = self.frequency(**kwargs)
+        o = self.offset(**kwargs)
+        p = self.phase(**kwargs)
 
         self.signal_noise = self.signal_noise_generator(len(self.timestamps))
-        self._sample = amplitude * np.sin(2.0 * np.pi * (self.timestamps * frequency - phase)) + offset + self.signal_noise
+        self._sample = a * np.sin(2.0 * np.pi * (f * self.timestamps - p)) + o + self.signal_noise
         return self._sample
 
     def __repr__(self):
