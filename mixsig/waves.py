@@ -9,31 +9,97 @@ from .utils import no_noise
 from .utils import timesequence_generator
 
 
-class WaveProperty:
+class WaveProperty(float):
+    def __new__(cls, mean=None, delta=None):
+        mean = 0.0 if mean is None else float(mean)
+        return super().__new__(cls, mean)
+
     def __init__(self, mean=None, delta=None):
-        self.mean = 0.0 if mean is None else float(mean)
-        self.delta = 0.0 if delta is None else float(delta)
-        self._value = None
+        super().__init__()
+        mean = 0.0 if mean is None else float(mean)
+        delta = 0.0 if delta is None else float(delta)
+        self.mean = mean
+        self.delta = delta
 
-    def __call__(self):
-        return self.value
+        if isclose(delta, 0):
+            self.generate = lambda: self
+        else:
+            self.generate = self._generator(delta)
 
-    @property
-    def value(self):
-        if self._value is None:
-            self._generate()
-        return self._value
+    def __call__(self, **kwargs) -> float:
+        return self.generate()
 
-    def generate(self):
-        self._generate()
-        return self._value
+    def _generator(self, delta):
+        def inner():
+            return self + (2 * np.random.random() - 1) * delta  # i.e. np.random.uniform(self - delta, self + delta)
+        return inner
 
-    def _generate(self):
-        self._value = (
-            self.mean
-            if self.delta == 0
-            else (2 * np.random.random() - 1) * self.delta + self.mean
-        )
+
+class Amplitude(WaveProperty):
+
+    def __new__(cls, mean=None, delta=None):
+        mean = 1.0 if mean is None else float(mean)
+        return super().__new__(cls, mean)
+
+    def __init__(self, mean=None, delta=None):
+        mean = 1.0 if mean is None else float(mean)
+        super().__init__(mean, delta)
+
+    def __call__(self, amplitude=1, **kwargs) -> float:
+        return amplitude * self.generate()
+
+    def _generator(self, delta):
+        a_min, a_max = self - delta, self + delta
+
+        def inner():
+            return np.random.uniform(a_min, a_max)
+        return inner
+
+
+class Frequency(WaveProperty):
+
+    def __new__(cls, mean=None, delta=None):
+        mean = 1.0 if mean is None else float(mean)
+        return super().__new__(cls, mean)
+
+    def __init__(self, mean=None, delta=None):
+        mean = 1.0 if mean is None else float(mean)
+        super().__init__(mean, delta)
+
+    def __call__(self, frequency=1, **kwargs) -> float:
+        return frequency * self.generate()
+
+    def _generator(self, delta):
+        f_min, f_max = self - delta, self + delta
+
+        def inner():
+            # return 1. / np.random.uniform(1. / f_max, 1. / f_min)  # This distribution breaks when self == delta.
+            return np.random.uniform(f_max, f_min)
+        return inner
+
+
+class Offset(WaveProperty):
+
+    def __call__(self, offset=0, **kwargs) -> float:
+        return offset + self.generate()
+
+    def _generator(self, delta):
+        b_min, b_max = self - delta, self + delta
+
+        def inner():
+            return np.random.uniform(b_min, b_max)
+        return inner
+
+
+class Phase(WaveProperty):
+
+    def __call__(self, phase=0, **kwargs) -> float:
+        return phase + self.generate()
+
+    def _generator(self, delta):
+        def inner():
+            return np.random.random()  # later on this will be scaled by 2*pi
+        return inner
 
 
 class Wave:
@@ -55,16 +121,16 @@ class Wave:
         self._sample = None
 
         amplitude = {} if amplitude is None else amplitude
-        self._amplitude = WaveProperty(**amplitude)
+        self.amplitude = Amplitude(**amplitude)
 
         frequency = {} if frequency is None else frequency
-        self._frequency = WaveProperty(**frequency)
+        self.frequency = Frequency(**frequency)
 
         offset = {} if offset is None else offset
-        self._offset = WaveProperty(**offset)
+        self.offset = Offset(**offset)
 
         phase = {} if phase is None else phase
-        self._phase = WaveProperty(**phase)
+        self.phase = Phase(**phase)
 
         self.signal_noise = None
         noise = {} if noise is None else noise
@@ -75,28 +141,8 @@ class Wave:
         else:
             self.signal_noise_generator = no_noise()
 
-        self.name = name_generator() if name is None else name
         self.color = color_generator() if color is None else color
-
-    @property
-    def timestamps(self):
-        return self._timestamps()
-
-    @property
-    def amplitude(self):
-        return self._amplitude()
-
-    @property
-    def frequency(self):
-        return self._frequency()
-
-    @property
-    def offset(self):
-        return self._offset()
-
-    @property
-    def phase(self):
-        return self._phase()
+        self.name = name_generator() if name is None else name
 
     def __call__(self):
         return self.sample
@@ -107,20 +153,16 @@ class Wave:
             self._sample = self.generate()
         return self._sample
 
+    @property
+    def timestamps(self):
+        return self._timestamps()
+
     def generate(self, **kwargs):
 
-        amplitude = self._amplitude.generate()
-        if 'amplitude' in kwargs:
-            amplitude *= kwargs['amplitude']
-        frequency = self._frequency.generate()
-        if 'frequency' in kwargs:
-            frequency *= kwargs['frequency']
-        offset = self._offset.generate()
-        if 'offset' in kwargs:
-            offset += kwargs['offset']
-        phase = self._phase.generate()
-        if 'phase' in kwargs:
-            phase += kwargs['phase']
+        amplitude = self.amplitude(**kwargs)
+        frequency = self.frequency(**kwargs)
+        offset = self.offset(**kwargs)
+        phase = self.phase(**kwargs)
 
         self.signal_noise = self.signal_noise_generator(len(self.timestamps))
         self._sample = amplitude * np.sin(2.0 * np.pi * (self.timestamps * frequency - phase)) + offset + self.signal_noise
@@ -128,4 +170,3 @@ class Wave:
 
     def __repr__(self):
         return 'Wave(amplitude={}, frequency={}, offset={}, phase={})'.format(self.amplitude, self.frequency, self.offset, self.phase)
-

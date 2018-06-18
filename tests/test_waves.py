@@ -1,53 +1,83 @@
 import pytest
+from math import isclose
 import numpy as np
 from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st
 from mixsig.utils import timesequence_generator
 from mixsig.waves import WaveProperty
+from mixsig.waves import Amplitude
+from mixsig.waves import Frequency
+from mixsig.waves import Offset
+from mixsig.waves import Phase
 from mixsig.waves import Wave
 
 waveproperty = st.builds(
     WaveProperty,
     mean=st.one_of(
         st.none(),
-        st.integers(),
-        st.floats(allow_infinity=False, allow_nan=False)
+        st.integers(min_value=1e-13, max_value=1e13),
+        st.floats(min_value=1e-13, max_value=1e13, allow_infinity=False, allow_nan=False)
     ),
     delta=st.one_of(
         st.none(),
-        st.integers(),
-        st.floats(allow_infinity=False, allow_nan=False)
+        st.integers(min_value=0.0, max_value=1e5),
+        st.floats(min_value=0.0, max_value=1e5, allow_infinity=False, allow_nan=False)
     )
 )
 
 
 @given(waveproperty)
 def test_waveproperty_output_is_float(wp):
+    assert isinstance(wp, float)
     assert isinstance(wp(), float)
-    assert isinstance(wp.generate(), float)
+    # assert isinstance(wp.generate(), float)
 
 
 @given(waveproperty)
-@example(WaveProperty(mean=5.0, delta=None))
-@example(WaveProperty(mean=5, delta=0.0))
-@example(WaveProperty(mean=5, delta=0))
-def test_waveproperty_generator(wp):
-    value1 = wp()
-    value2 = wp.generate()
-    if wp.delta == 0.0 or wp.delta == 0:
-        assert value1 == value2, f'{wp.mean} {wp.delta}'
+def test_waveproperty_generator_a(wp):
+    if isclose(wp.delta, 0):
+        assert wp == wp(), f'{wp.mean} {wp.delta}'
+    else:
+        assert wp != wp(), f'{wp.mean} {wp.delta}'
+
+
+@pytest.mark.parametrize('mean,delta', [
+    (5, None),
+    (5, 0.0),
+    (5, 0),
+    (5, 1),
+    (5, 1.0),
+    (5.0, None),
+    (5.0, 0.0),
+    (5.0, 0),
+    (5.0, 1),
+    (5.0, 1.0),
+    (None, None),
+    (None, 0.0),
+    (None, 0),
+    (None, 1),
+    (None, 1.0),
+], ids=repr)
+@pytest.mark.parametrize('Wp', [WaveProperty, Amplitude, Frequency, Offset, Phase], ids=repr)
+def test_waveproperty_generator_b(Wp, mean, delta):
+    wp = Wp(mean, delta)
+    assert wp == wp.mean
+    if isclose(wp.delta, 0):
+        assert wp == wp(), f'{wp.mean} {wp.delta}'
+    else:
+        assert wp != wp(), f'{wp.mean} {wp.delta}'
 
 
 def test_wave_default_kwargs():
     sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     wave = Wave(ts)
-    assert wave.amplitude == 0
-    assert wave.frequency == 0
+    assert wave.amplitude == 1
+    assert wave.frequency == 1
     assert wave.offset == 0
     assert wave.phase == 0
-    assert wave.__repr__() == 'Wave(amplitude=0.0, frequency=0.0, offset=0.0, phase=0.0)'
+    assert wave.__repr__() == 'Wave(amplitude=1.0, frequency=1.0, offset=0.0, phase=0.0)'
 
 
 def test_wave_mean():
@@ -81,8 +111,8 @@ def test_wave_with_delayed_size():
     sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()
     params = {
-        'amplitude': {'mean': 1},
-        'frequency': {'mean': 1},
+        'amplitude': {'mean': 2},
+        'frequency': {'mean': 2},
     }
     wave = Wave(ts, **params)
     w0 = wave.generate()

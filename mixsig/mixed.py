@@ -48,13 +48,9 @@ class MixedSignal:
         self.model = model
         assert self.model in ('many2one', 'many2many')
 
-        self.mixed_signal_props = {}
-        for prop_name, coeffs in msig_coeffs.items():
-            self.mixed_signal_props[prop_name] = WaveProperty(**coeffs)
+        self.mixed_signal_props = {prop_name: WaveProperty(**coeffs) for prop_name, coeffs in msig_coeffs.items()}
 
-        self.signal_objects = []
-        for coeffs in sigs_coeffs:
-            self.signal_objects.append(Wave(self.timestamps, **coeffs))
+        self.signal_objects = [Wave(self.timestamps, **coeffs) for coeffs in sigs_coeffs]
 
         self.n_signals = len(self.signals)
 
@@ -82,7 +78,10 @@ class MixedSignal:
         return self._signals
 
     def _create_class_distribution(self):
-        """ Create a distribution of ints which represent class labels."""
+        """
+        Create a distribution of ints which represent class labels.
+        self.classes -> np.array([2,1,3, ... ,1])
+        """
         shuffled_indexes = np.arange(self.n_timestamps)
         np.random.shuffle(shuffled_indexes)
         self.classes = np.zeros(self.n_timestamps, dtype=int)
@@ -90,7 +89,10 @@ class MixedSignal:
             self.classes[np.where(shuffled_indexes < s * self.n_timestamps // self.n_signals)] += 1
 
     def _create_one_hots_from_classes(self):
-        """ Create one-hot vector from the class label distribution."""
+        """
+        Create one-hot vector from the class label distribution.
+        self.one_hots -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
+        """
         self.one_hots = np.zeros((self.n_timestamps, self.n_signals), dtype=float)
         self.one_hots[(np.arange(self.n_timestamps), self.classes)] = 1
 
@@ -99,7 +101,7 @@ class MixedSignal:
         # generate new timestamps
         self.timestamps = self.sequence_generator()
         # generate new values for each mixed signal property.
-        props = {name: prop.generate() for name, prop in self.mixed_signal_props.items()}
+        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
         # generate new single signals.
         self._signals = np.vstack([sig.generate(**props) for sig in self.signal_objects])
 
