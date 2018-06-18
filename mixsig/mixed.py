@@ -2,7 +2,11 @@ import os
 import json
 import numpy as np
 from .utils import timesequence_generator
-from .waves import Wave, WaveProperty
+from .waves import Wave
+from .waves import Amplitude
+from .waves import Frequency
+from .waves import Offset
+from .waves import Phase
 
 
 class MixedSignal:
@@ -48,7 +52,18 @@ class MixedSignal:
         self.model = model
         assert self.model in ('many2one', 'many2many')
 
-        self.mixed_signal_props = {prop_name: WaveProperty(**coeffs) for prop_name, coeffs in msig_coeffs.items()}
+        self.mixed_signal_props = {}
+        for prop_name, coeffs in msig_coeffs.items():
+            if prop_name == 'amplitude':
+                self.mixed_signal_props[prop_name] = Amplitude(**coeffs)
+            elif prop_name == 'frequency':
+                self.mixed_signal_props[prop_name] = Frequency(**coeffs)
+            elif prop_name == 'offset':
+                self.mixed_signal_props[prop_name] = Offset(**coeffs)
+            elif prop_name == 'phase':
+                self.mixed_signal_props[prop_name] = Phase(**coeffs)
+            else:
+                print(f'got unexpected msig_coeffs {prop_name}')
 
         self.signal_objects = [Wave(self.timestamps, **coeffs) for coeffs in sigs_coeffs]
 
