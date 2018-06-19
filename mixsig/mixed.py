@@ -13,6 +13,7 @@ class MixedSignal:
     def __init__(self,
                  sigs_coeffs,
                  msig_coeffs=None,
+                 batch_size=1,
                  window_size=1,
                  window_method='sliding',
                  run_label='default',
@@ -31,6 +32,7 @@ class MixedSignal:
         self.one_hots = None
         self.mixed_signal = None
 
+        self.batch_size = batch_size
         self.window_size = window_size
         self.window_method = window_method.lower()
         self.net_type = net_type
@@ -122,6 +124,15 @@ class MixedSignal:
         assert len(timestamps) == len(mixed_signal) == len(labels)
 
         sorted_indices = np.argsort(timestamps)
+
+        # trim away the data so we can later chop it up evenly by our batch size.
+
+        if self.window_method == 'sliding':
+            chop_index = (len(timestamps) - self.window_size + 1) % self.batch_size
+        else:
+            chop_index = len(timestamps) % (self.window_size * self.batch_size)
+
+        sorted_indices = sorted_indices[chop_index:]
 
         self.timestamps = timestamps[sorted_indices]
         self.n_timestamps = len(self.timestamps)

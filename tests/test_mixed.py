@@ -46,10 +46,13 @@ def test_create_from_3_waves_0_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
+    batch_size=64
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
+        batch_size=batch_size,
+
         window_size=window_size,
         window_method='sliding',
         run_label='test'
@@ -58,10 +61,14 @@ def test_create_from_3_waves_0_noise():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
+    assert len(X) % batch_size == 0
+    assert len(y) % batch_size == 0
+    assert len(msig.inputs) % batch_size == 0
+    assert len(msig.labels) % batch_size == 0
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, window_size, 1)
-    assert msig.labels.shape == (msig_coeffs['time']['n_timestamps'] - window_size + 1, len(sigs_coeffs))
+    assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert msig.labels.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
     assert np.all(msig.signal_names == ['A', 'B', 'C'])
     assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -102,10 +109,13 @@ def test_create_from_2_waves_1_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
+    batch_size=16
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
+        batch_size=batch_size,
+
         window_size=window_size,
         window_method='sliding',
         run_label='test'
@@ -114,6 +124,10 @@ def test_create_from_2_waves_1_noise():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
+    assert len(X) % batch_size == 0
+    assert len(y) % batch_size == 0
+    assert len(msig.inputs) % batch_size == 0
+    assert len(msig.labels) % batch_size == 0
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
@@ -159,10 +173,12 @@ def test_create_from_1_waves_2_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
+    batch_size = 128
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
+        batch_size=batch_size,
         window_size=window_size,
         window_method='sliding',
         run_label='test'
@@ -171,6 +187,10 @@ def test_create_from_1_waves_2_noise():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
+    assert len(X) % batch_size == 0
+    assert len(y) % batch_size == 0
+    assert len(msig.inputs) % batch_size == 0
+    assert len(msig.labels) % batch_size == 0
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
@@ -214,29 +234,14 @@ def test_create_from_3_waves_boxcar():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    window_size = 10
-    with pytest.raises(AssertionError):
-        MixedSignal(
-            sigs_coeffs,
-            msig_coeffs=msig_coeffs,
-            window_size=window_size,
-            window_method='boxcar',
-            run_label='test'
-        )
-
-    msig_coeffs = {
-        'amplitude': {'mean': 10, 'delta': 2},
-        'frequency': {'mean': 25, 'delta': 0},
-        'offset': {'mean': 1, 'delta': 5},
-        'phase': {'mean': 0, 'delta': 1},
-        'time': {'t_min': 0, 't_max': 150, 'n_timestamps': 801}
-    }
+    batch_size = 7
     window_size = 9
 
     with pytest.raises(AssertionError):
         MixedSignal(
             sigs_coeffs,
             msig_coeffs=msig_coeffs,
+            batch_size=batch_size,
             window_size=window_size,
             window_method='boxcrap',
             run_label='test'
@@ -245,6 +250,7 @@ def test_create_from_3_waves_boxcar():
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
+        batch_size=batch_size,
         window_size=window_size,
         window_method='boxcar',
         run_label='test'
@@ -252,6 +258,10 @@ def test_create_from_3_waves_boxcar():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
+    assert len(X) % batch_size == 0
+    assert len(y) % batch_size == 0
+    assert len(msig.inputs) % batch_size == 0
+    assert len(msig.labels) % batch_size == 0
     assert np.all(msig.inputs == X)
     assert np.all(msig.labels == y)
     assert msig.n_timestamps % window_size == 0
