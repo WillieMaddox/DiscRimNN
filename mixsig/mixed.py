@@ -40,7 +40,7 @@ class MixedSignal:
         self.name = name
 
         assert self.net_type in ('MLP', 'RNN')
-        assert self.model in ('many2one', 'many2many')
+        assert self.model in ('many2one', 'many2many', 'many2one&time')
         assert self.window_method in ('sliding', 'boxcar')
 
         if 'time' in msig_coeffs:
@@ -270,6 +270,15 @@ class MixedSignal:
                 for i in range(self.window_size):
                     inputs[:, i] = self.mixed_signal[i:i+self.n_samples]
                 self.inputs = inputs.reshape(self.n_samples, self.window_size, 1)
+                self.labels = self.one_hots[(self.window_size - 1):]
+
+            elif self.model == 'many2one&time':
+                # RNN: many to one
+                inputs = np.zeros((self.n_samples, self.window_size, 2))
+                for i in range(self.window_size):
+                    inputs[:, i, 0] = self.mixed_signal[i:i + self.n_samples]
+                    inputs[:, i, 1] = self.timestamps[i + self.n_samples - 1] - self.timestamps[i:i + self.n_samples]
+                self.inputs = inputs.reshape(self.n_samples, self.window_size, 2)
                 self.labels = self.one_hots[(self.window_size - 1):]
 
             else:
