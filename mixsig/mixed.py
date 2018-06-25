@@ -78,8 +78,6 @@ class MixedSignal:
         # TODO: Relative to the directory of the calling script?
         # TODO: Relative to the directory of this module?
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
-        os.makedirs(self.out_dir, exist_ok=True)
-        self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
 
     @property
     def signals(self):
@@ -328,6 +326,7 @@ class MixedSignal:
     #     return x_batch, y_batch
 
     def save_config(self):
+        os.makedirs(self.out_dir, exist_ok=True)
         self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
         with open(self.config_filename, 'w') as ofs:
             json.dump(self.config_dict, ofs, indent=4)
