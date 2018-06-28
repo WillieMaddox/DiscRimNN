@@ -1,7 +1,10 @@
 import os
 import json
+import threading
 import numpy as np
+from .utils import TimeSequenceCoeffs
 from .utils import timesequence_generator
+from .waves import WaveProps
 from .waves import Wave
 from .waves import Amplitude
 from .waves import Frequency
@@ -19,8 +22,15 @@ class MixedSignal:
                  run_label='default',
                  net_type='RNN',
                  model='many2one',
-                 name='Mixed'):
+                 name='Mixed',
+                 n_groups=5):
 
+        self.lock = threading.Lock()
+        self.X = None
+        self.y = None
+        self.n_groups = n_groups
+        self.group_index = 0
+        self.group_indices = None
         self._signals = None
         self._wave_names = None
         self._wave_colors = None
@@ -40,7 +50,7 @@ class MixedSignal:
         self.name = name
 
         assert self.net_type in ('MLP', 'RNN')
-        assert self.model in ('many2one', 'many2many', 'many2one&time')
+        assert self.model in ('many2one', 'many2many', 'many2one+time')
         assert self.window_method in ('sliding', 'boxcar')
 
         if 'time' in msig_coeffs:
@@ -78,6 +88,9 @@ class MixedSignal:
         # TODO: Relative to the directory of the calling script?
         # TODO: Relative to the directory of this module?
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
+        self.config_filename = os.path.join(self.out_dir, 'mixedsignal_config.json')
+        self.model_weights_filename = os.path.join(self.out_dir, 'model_weights.h5')
+        self.training_stats_filename = os.path.join(self.out_dir, 'training_stats.csv')
 
     @property
     def signals(self):
@@ -123,7 +136,7 @@ class MixedSignal:
 
         sorted_indices = np.argsort(timestamps)
 
-        # trim away the data so we can later chop it up evenly by our batch size.
+        # trim away the data so we can later chop it up evenly with our batch size.
 
         if self.window_method == 'sliding':
             chop_index = (len(timestamps) - self.window_size + 1) % self.batch_size
@@ -263,6 +276,7 @@ class MixedSignal:
 
         else:
             if self.model == 'many2one':
+                # (1088, 100, 1) (1088, 3)
                 # RNN: many to one
                 inputs = np.zeros((self.n_samples, self.window_size))
                 for i in range(self.window_size):
@@ -271,6 +285,7 @@ class MixedSignal:
                 self.labels = self.one_hots[(self.window_size - 1):]
 
             elif self.model == 'many2one&time':
+                # (1088, 100, 1) (1088, 3)
                 # RNN: many to one
                 inputs = np.zeros((self.n_samples, self.window_size, 2))
                 for i in range(self.window_size):
@@ -280,6 +295,7 @@ class MixedSignal:
                 self.labels = self.one_hots[(self.window_size - 1):]
 
             else:
+                # (1088, 100, 1) (1088, 100, 3)
                 # RNN: many to many
                 inputs = np.zeros((self.n_samples, self.window_size))
                 labels = np.zeros((self.n_samples, self.window_size, self.n_signals))
@@ -316,17 +332,46 @@ class MixedSignal:
                 self.inputs = self.mixed_signal.reshape((self.n_samples, self.window_size, 1))
                 self.labels = self.one_hots.reshape((self.n_samples, self.window_size, self.n_signals))
 
-    # def generate_batch(self, batch_size):
-    #     x_batch = np.empty((batch_size, *self.inputs.shape))
-    #     y_batch = np.empty((batch_size, *self.one_hots.shape))
-    #     for i in range(batch_size):
-    #         x, y = self.generate()
-    #         x_batch[i] = x
-    #         y_batch[i] = y
-    #     return x_batch, y_batch
+    def __next__(self):
+        return self.next()
+
+    def next(self):
+        # with self.lock:
+        if self.group_index == 0:
+            self.X, self.y, self.group_indices, n = self.generate_groups(self.n_groups)
+        self.group_index = (self.group_index + 1) % (len(self.X) // self.batch_size)
+        idx = self.group_indices[self.group_index * self.batch_size:(self.group_index + 1) * self.batch_size]
+        return self.X[idx], self.y[idx]
+
+    def generate_groups(self, n):
+        x, y = self.generate()
+        for i in range(n - 1):
+            xi, yi = self.generate()
+            x = np.vstack((x, xi))
+            y = np.vstack((y, yi))
+
+        n_samples = len(x)
+        n_batches = n_samples // self.batch_size
+        indices = np.arange(n_samples)
+        np.random.shuffle(indices)
+
+        return x, y, indices, n_batches
+
+    def generator(self, n_groups, batch_size, training=False):
+
+        x, y, indices, n = self.generate_groups(n_groups)
+        i = 0
+        while True:
+            # with self.lock:
+            if i >= n:
+                if training:
+                    x, y, indices, n = self.generate_groups(n_groups)
+                i = 0
+            idx = indices[i * batch_size:(i + 1) * batch_size]
+            i += 1
+            yield x[idx], y[idx]
 
     def save_config(self):
         os.makedirs(self.out_dir, exist_ok=True)
-        self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
         with open(self.config_filename, 'w') as ofs:
             json.dump(self.config_dict, ofs, indent=4)
