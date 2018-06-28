@@ -2,9 +2,9 @@ import os
 import json
 import threading
 import numpy as np
-from .utils import TimeSequenceCoeffs
+# from .utils import TimeSequenceCoeffs
 from .utils import timesequence_generator
-from .waves import WaveProps
+# from .waves import WaveProps
 from .waves import Wave
 from .waves import Amplitude
 from .waves import Frequency
@@ -272,7 +272,13 @@ class MixedSignal:
                 self.labels = self.one_hots[(self.window_size - 1):]
             else:
                 # MLP: many to many
-                raise NotImplementedError
+                inputs = np.zeros((self.n_samples, self.window_size))
+                labels = np.zeros((self.n_samples, self.window_size, self.n_signals))
+                for i in range(self.window_size):
+                    inputs[:, i] = self.mixed_signal[i:i + self.n_samples]
+                    labels[:, i] = self.one_hots[i:i + self.n_samples]
+                self.inputs = inputs.reshape(self.n_samples, self.window_size, 1)
+                self.labels = labels.reshape(self.n_samples, self.window_size, self.n_signals)
 
         else:
             if self.model == 'many2one':
