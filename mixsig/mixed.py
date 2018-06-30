@@ -130,7 +130,7 @@ class MixedSignal:
             if wave.is_independent:
                 timestamps = np.append(timestamps, wave.timestamps)
                 mixed_signal = np.append(mixed_signal, wave.sample)
-                labels = np.append(labels, np.zeros(wave.n_timestamps, dtype=int) + c)
+                labels = np.append(labels, np.zeros(len(wave), dtype=int) + c)
 
         assert len(timestamps) == len(mixed_signal) == len(labels)
 
