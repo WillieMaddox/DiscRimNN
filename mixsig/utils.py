@@ -1,6 +1,14 @@
 import string
+from datetime import datetime
 import numpy as np
 from typing import Text
+
+
+def get_datetime_now(t=None, fmt='%Y%m%d_%H%M%S'):
+    """Return timestamp as a string; default: current time, format: YYYYDDMM_hhmmss."""
+    if t is None:
+        t = datetime.now()
+    return t.strftime(fmt)
 
 
 def name_generator() -> Text:

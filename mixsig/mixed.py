@@ -3,6 +3,7 @@ import json
 import threading
 import numpy as np
 # from .utils import TimeSequenceCoeffs
+from .utils import get_datetime_now
 from .utils import timesequence_generator
 # from .waves import WaveProps
 from .waves import Wave
@@ -19,9 +20,9 @@ class MixedSignal:
                  batch_size=1,
                  window_size=1,
                  window_method='sliding',
-                 run_label='default',
                  net_type='RNN',
                  model='many2one',
+                 run_label=None,
                  name='Mixed',
                  n_groups=5):
 
@@ -74,6 +75,7 @@ class MixedSignal:
         self.waves = [Wave(**coeffs) for coeffs in sigs_coeffs]
 
         self.n_signals = len(self.waves)
+        run_label = run_label or get_datetime_now()
 
         self.config_dict = {
             'run_label': run_label,
