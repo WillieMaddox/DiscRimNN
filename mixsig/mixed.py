@@ -3,6 +3,7 @@ import json
 import threading
 import numpy as np
 # from .utils import TimeSequenceCoeffs
+from .utils import factors
 from .utils import get_datetime_now
 from .utils import timesequence_generator
 # from .waves import WaveProps
@@ -139,12 +140,16 @@ class MixedSignal:
 
         sorted_indices = np.argsort(timestamps)
 
-        # trim away the data so we can later chop it up evenly with our batch size.
+        # trim away enough data to make it divisible by batch_size.
 
         if self.window_type == 'sliding':
             chop_index = (len(timestamps) - self.window_size + 1) % self.batch_size
         else:
-            chop_index = len(timestamps) % (self.window_size * self.batch_size)
+            assert len(timestamps) >= self.window_size * self.batch_size
+            fact_a = factors(self.batch_size)
+            fact_b = factors(self.window_size)
+            gcm = max(fact_a.intersection(fact_b))
+            chop_index = len(timestamps) % (self.window_size * self.batch_size // gcm)
 
         sorted_indices = sorted_indices[chop_index:]
 

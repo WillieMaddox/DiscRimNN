@@ -1,4 +1,5 @@
 import string
+from functools import reduce
 from datetime import datetime
 import numpy as np
 from typing import Text
@@ -9,6 +10,10 @@ def get_datetime_now(t=None, fmt='%Y%m%d_%H%M%S'):
     if t is None:
         t = datetime.now()
     return t.strftime(fmt)
+
+
+def factors(n):
+    return set(reduce(list.__add__, ([i, n//i] for i in range(1, int(pow(n, 0.5) + 1)) if n % i == 0)))
 
 
 def name_generator() -> Text:
@@ -45,7 +50,7 @@ def timesequence_generator(t_min=None, t_max=None, n_max=None, n_min=None, noise
     """
     If self.delta == 0 and self.dt == 1
     the time spacing will look like...
-    _timestamps 0.00, 1.00, 2.00, 3.00, 4.00, 5.00 ...
+    _timestamps = [0.00, 1.00, 2.00, 3.00, 4.00, 5.00 ...]
 
     If self.delta != 0
     each time point will be perturbed...
