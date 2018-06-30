@@ -99,3 +99,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# project specific
+# the path for saving output dumps and snapshots is formatted with current datetime starting with year.
+out/20*
