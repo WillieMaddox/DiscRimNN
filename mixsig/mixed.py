@@ -92,7 +92,8 @@ class MixedSignal:
         # TODO: Relative to the directory of the calling script?
         # TODO: Relative to the directory of this module?
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
-        self.config_filename = os.path.join(self.out_dir, 'mixedsignal_config.json')
+        self.model_filename = os.path.join(self.out_dir, 'model.h5')
+        self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
         self.model_weights_filename = os.path.join(self.out_dir, 'model_weights.h5')
         self.training_stats_filename = os.path.join(self.out_dir, 'training_stats.csv')
 
@@ -357,12 +358,12 @@ class MixedSignal:
     def next(self):
         # with self.lock:
         if self.group_index == 0:
-            self.X, self.y, self.group_indices, n = self.generate_groups(self.n_groups)
+            self.X, self.y, self.group_indices, n = self.generate_group(self.n_groups)
         self.group_index = (self.group_index + 1) % (len(self.X) // self.batch_size)
         idx = self.group_indices[self.group_index * self.batch_size:(self.group_index + 1) * self.batch_size]
         return self.X[idx], self.y[idx]
 
-    def generate_groups(self, n):
+    def generate_group(self, n):
         x, y = self.generate()
         for i in range(n - 1):
             xi, yi = self.generate()
@@ -378,13 +379,13 @@ class MixedSignal:
 
     def generator(self, n_groups, batch_size, training=False):
 
-        x, y, indices, n = self.generate_groups(n_groups)
+        x, y, indices, n_batches = self.generate_group(n_groups)
         i = 0
         while True:
             # with self.lock:
-            if i >= n:
+            if i >= n_batches:
                 if training:
-                    x, y, indices, n = self.generate_groups(n_groups)
+                    x, y, indices, n_batches = self.generate_group(n_groups)
                 i = 0
             idx = indices[i * batch_size:(i + 1) * batch_size]
             i += 1
