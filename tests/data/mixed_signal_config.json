@@ -1,7 +1,9 @@
 {
     "run_label": "test",
     "window_size": 10,
-    "window_method": "sliding",
+    "window_type": "sliding",
+    "network_type": "RNN",
+    "sequence_type": "many2one",
     "sigs_coeffs": [
         {
             "amplitude": {

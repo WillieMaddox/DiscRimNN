@@ -63,14 +63,14 @@ def test_create_from_3_waves_0_noise():
     X, y = msig.generate()
     assert len(X) % batch_size == 0
     assert len(y) % batch_size == 0
-    assert len(msig.inputs) % batch_size == 0
-    assert len(msig.labels) % batch_size == 0
-    assert np.all(msig.inputs == X)
-    assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert msig.labels.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
-    assert np.all(msig.signal_names == ['A', 'B', 'C'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+    assert len(msig.X) % batch_size == 0
+    assert len(msig.y) % batch_size == 0
+    assert np.all(msig.X == X)
+    assert np.all(msig.y == y)
+    assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert msig.y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
+    assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_2_waves_1_noise():
@@ -115,7 +115,6 @@ def test_create_from_2_waves_1_noise():
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
         batch_size=batch_size,
-
         window_size=window_size,
         window_type='sliding',
         run_label='test'
@@ -126,14 +125,14 @@ def test_create_from_2_waves_1_noise():
     X, y = msig.generate()
     assert len(X) % batch_size == 0
     assert len(y) % batch_size == 0
-    assert len(msig.inputs) % batch_size == 0
-    assert len(msig.labels) % batch_size == 0
-    assert np.all(msig.inputs == X)
-    assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert msig.labels.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
-    assert np.all(msig.signal_names == ['A', 'B', 'C'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+    assert len(msig.X) % batch_size == 0
+    assert len(msig.y) % batch_size == 0
+    assert np.all(msig.X == X)
+    assert np.all(msig.y == y)
+    assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert msig.y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
+    assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_1_waves_2_noise():
@@ -189,14 +188,14 @@ def test_create_from_1_waves_2_noise():
     X, y = msig.generate()
     assert len(X) % batch_size == 0
     assert len(y) % batch_size == 0
-    assert len(msig.inputs) % batch_size == 0
-    assert len(msig.labels) % batch_size == 0
-    assert np.all(msig.inputs == X)
-    assert np.all(msig.labels == y)
-    assert msig.inputs.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert msig.labels.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
-    assert np.all(msig.signal_names == ['A', 'B', 'C'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+    assert len(msig.X) % batch_size == 0
+    assert len(msig.y) % batch_size == 0
+    assert np.all(msig.X == X)
+    assert np.all(msig.y == y)
+    assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert msig.y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
+    assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
 
 def test_create_from_3_waves_boxcar():
@@ -260,15 +259,16 @@ def test_create_from_3_waves_boxcar():
     X, y = msig.generate()
     assert len(X) % batch_size == 0
     assert len(y) % batch_size == 0
-    assert len(msig.inputs) % batch_size == 0
-    assert len(msig.labels) % batch_size == 0
-    assert np.all(msig.inputs == X)
-    assert np.all(msig.labels == y)
+    assert len(msig.X) % batch_size == 0
+    assert len(msig.y) % batch_size == 0
+    assert np.all(msig.X == X)
+    assert np.all(msig.y == y)
     assert msig.n_timestamps % window_size == 0
-    assert msig.inputs.shape == (msig.n_timestamps / window_size, window_size, 1)
-    assert msig.labels.shape == (msig.n_timestamps / window_size, len(sigs_coeffs))
-    assert np.all(msig.signal_names == ['A', 'B', 'C'])
-    assert np.all(msig.signal_colors == ['#ff0000', '#00ff00', '#0000ff'])
+    assert msig.X.shape == (msig.n_timestamps / window_size, window_size, 1)
+    assert msig.y.shape == (msig.n_timestamps / window_size, len(sigs_coeffs))
+    assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
+    assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
+
 
 
 @fixture
