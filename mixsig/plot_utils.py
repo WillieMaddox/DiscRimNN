@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
 
-def plot_confusion_matrix(y_true, y_pred, labels=None, title='Confusion matrix', cmap_str='Blues', figsize=(8, 8), filename=None):
+def plot_confusion_matrix(y_true, y_pred, labels=None, title='Confusion matrix', cmap_str='Blues', figsize=(8, 6), filename=None):
     if labels is not None:
         assert len(labels) >= np.max(y_pred)
         ymap = {idx: label for idx, label in enumerate(labels)}
