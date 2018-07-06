@@ -5,8 +5,8 @@ import numpy as np
 from typing import Text
 
 
-def get_datetime_now(t=None, fmt='%Y%m%d_%H%M%S'):
-    """Return timestamp as a string; default: current time, format: YYYYDDMM_hhmmss."""
+def get_datetime_now(t=None, fmt='%Y_%m%d_%H%M_%S'):
+    """Return timestamp as a string; default: current time, format: YYYY_DDMM_hhmm_ss."""
     if t is None:
         t = datetime.now()
     return t.strftime(fmt)
