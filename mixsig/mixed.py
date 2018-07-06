@@ -321,44 +321,46 @@ class MixedSignal:
             else:
                 raise NotImplementedError
 
-    def __next__(self):
-        return self.next()
-
-    def next(self):
-        # with self.lock:
-        if self.group_index == 0:
-            self.X, self.y, self.group_indices, n = self.generate_group(self.n_groups)
-        self.group_index = (self.group_index + 1) % (len(self.X) // self.batch_size)
-        idx = self.group_indices[self.group_index * self.batch_size:(self.group_index + 1) * self.batch_size]
-        return self.X[idx], self.y[idx]
-
-    def generate_group(self, n):
+    def generate_group(self, n_msigs, shuffle_inplace=False):
         x, y = self.generate()
-        for i in range(n - 1):
+        for i in range(n_msigs - 1):
             xi, yi = self.generate()
             x = np.vstack((x, xi))
             y = np.vstack((y, yi))
-
         n_samples = len(x)
         n_batches = n_samples // self.batch_size
         indices = np.arange(n_samples)
         np.random.shuffle(indices)
 
-        return x, y, indices, n_batches
+        if shuffle_inplace:
+            return x[indices], y[indices]
+        else:
+            return x, y, indices, n_batches
 
-    def generator(self, n_groups, batch_size, training=False):
-
-        x, y, indices, n_batches = self.generate_group(n_groups)
+    def generator(self, n_msigs, batch_size, training=False):
+        x, y, indices, n_batches = self.generate_group(n_msigs)
         i = 0
         while True:
+            # TODO: figure out how to use a threading lock with a data generator.
             # with self.lock:
             if i >= n_batches:
                 if training:
-                    x, y, indices, n_batches = self.generate_group(n_groups)
+                    x, y, indices, n_batches = self.generate_group(n_msigs)
                 i = 0
             idx = indices[i * batch_size:(i + 1) * batch_size]
             i += 1
             yield x[idx], y[idx]
+
+    # def __next__(self):
+    #     return self.next()
+    #
+    # def next(self):
+    #     # with self.lock:
+    #     if self.group_index == 0:
+    #         self.X, self.y, self.group_indices, n = self.generate_group(self.n_groups)
+    #     self.group_index = (self.group_index + 1) % (len(self.X) // self.batch_size)
+    #     idx = self.group_indices[self.group_index * self.batch_size:(self.group_index + 1) * self.batch_size]
+    #     return self.X[idx], self.y[idx]
 
     def save_config(self):
         os.makedirs(self.out_dir, exist_ok=True)
