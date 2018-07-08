@@ -54,8 +54,15 @@ class MixedSignal:
         if 'time' in msig_coeffs:
             self.sequence_generator = timesequence_generator(**msig_coeffs['time'])
 
+        mixed_signal_prop_defaults = {
+            'amplitude': {'mean': 1, 'delta': 0},
+            'frequency': {'mean': 1, 'delta': 0},
+            'offset': {'mean': 0, 'delta': 0},
+            'phase': {'mean': 0, 'delta': 0},
+        }
         self.mixed_signal_props = {}
-        for prop_name, coeffs in msig_coeffs.items():
+        for prop_name, default_coeffs in mixed_signal_prop_defaults.items():
+            coeffs = msig_coeffs[prop_name] if prop_name in msig_coeffs else default_coeffs
             if prop_name == 'amplitude':
                 self.mixed_signal_props[prop_name] = Amplitude(**coeffs)
             elif prop_name == 'frequency':
@@ -64,10 +71,6 @@ class MixedSignal:
                 self.mixed_signal_props[prop_name] = Offset(**coeffs)
             elif prop_name == 'phase':
                 self.mixed_signal_props[prop_name] = Phase(**coeffs)
-            elif prop_name == 'time':
-                pass
-            else:
-                print(f'got unexpected msig_coeffs {prop_name}')
 
         self.waves = [Wave(**coeffs) for coeffs in sigs_coeffs]
 
@@ -206,7 +209,6 @@ class MixedSignal:
         return self.X, self.y
 
     def _generate(self):
-
         self._generate_signals()
         self._create_one_hots_from_labels()
 
