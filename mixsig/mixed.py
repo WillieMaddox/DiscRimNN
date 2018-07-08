@@ -260,7 +260,7 @@ class MixedSignal:
                     self.X[:, i] = self.mixed_signal[i:i + self.n_samples]
                 self.y = self.one_hots[(self.window_size - 1):]
             elif self.sequence_type == 'many2many':
-                # MLP: many to many
+                # MLP: many to many (1088, 100, 1) (1088, 100, 3)
                 self.X = np.zeros((self.n_samples, self.window_size, 1))
                 self.y = np.zeros((self.n_samples, self.window_size, self.n_classes))
                 for i in range(self.window_size):
@@ -276,7 +276,7 @@ class MixedSignal:
                     self.X[:, i, 0] = self.mixed_signal[i:i + self.n_samples]
                 self.y = self.one_hots[(self.window_size - 1):]
             elif self.sequence_type == 'many2one+time':
-                # RNN: many to one (1088, 100, 1) (1088, 3)
+                # RNN: many to one (1088, 100, 2) (1088, 3)
                 self.X = np.zeros((self.n_samples, self.window_size, 2))
                 for i in range(self.window_size):
                     self.X[:, i, 0] = self.mixed_signal[i:i + self.n_samples]
