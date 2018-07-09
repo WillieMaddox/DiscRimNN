@@ -130,6 +130,8 @@ def timesequence_generator(t_min=None, t_max=None, n_max=None, n_min=None, noise
                 return uniform_timestamps
 
     return gen_timesequence
+
+
 def create_label_distribution(n_timestamps, n_classes):
     """
     Create a distribution of ints which represent class labels.

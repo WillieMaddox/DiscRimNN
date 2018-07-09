@@ -69,6 +69,8 @@ def test_sequence_generator_pareto(pareto_shape):
             n_max=200,
             noise_type='pareto',
             pareto_shape=pareto_shape)
+
+
 def test_one_hot_encoder_decoder_0():
     length = 20
     n_classes = 3

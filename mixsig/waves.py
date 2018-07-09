@@ -177,4 +177,4 @@ class Wave:
         # return self._sample
 
     def __repr__(self):
-        return 'Wave(amplitude={}, frequency={}, offset={}, phase={})'.format(self.amplitude, self.frequency, self.offset, self.phase)
+        return f'Wave(amplitude={self.amplitude}, frequency={self.frequency}, offset={self.offset}, phase={self.phase})'

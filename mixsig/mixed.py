@@ -28,11 +28,11 @@ class MixedSignal:
                  n_groups=5):
 
         self.lock = threading.Lock()
-        self.X = None
-        self.y = None
         self.n_groups = n_groups
         self.group_index = 0
         self.group_indices = None
+        self.X = None
+        self.y = None
 
         # Should these be properties?
         self.labels = None
