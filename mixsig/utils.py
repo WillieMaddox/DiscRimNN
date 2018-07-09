@@ -136,3 +136,28 @@ def timesequence_generator(t_min=None, t_max=None, n_max=None, n_min=None, noise
                 return uniform_timestamps
 
     return gen_timesequence
+def create_label_distribution(n_timestamps, n_classes):
+    """
+    Create a distribution of ints which represent class labels.
+    :return np.array([2,1,3, ... ,1])
+    """
+    shuffled_indexes = np.arange(n_timestamps)
+    np.random.shuffle(shuffled_indexes)
+    labels = np.zeros(n_timestamps, dtype=int)
+    for c in range(n_classes):
+        labels[np.where(shuffled_indexes < c * n_timestamps // n_classes)] += 1
+    return labels
+
+
+def create_one_hots_from_labels(labels, n_classes):
+    """
+    Create one-hot vector from the class label distribution.
+    self.one_hots -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
+    """
+    length = len(labels)
+    one_hots = np.zeros((length, n_classes), dtype=float)
+    one_hots[(np.arange(length), labels)] = 1
+    return one_hots
+
+
+# one hot encode sequence

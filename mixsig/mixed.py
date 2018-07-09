@@ -6,6 +6,8 @@ import numpy as np
 from .utils import factors
 from .utils import get_datetime_now
 from .utils import timesequence_generator
+from .utils import create_label_distribution
+from .utils import create_one_hots_from_labels
 # from .waves import WaveProps
 from .waves import Wave
 from .waves import Amplitude
@@ -103,20 +105,13 @@ class MixedSignal:
         # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
         # generate new timestamps
         timestamps = self.sequence_generator()
-        n_timestamps = len(timestamps)
         classes = np.array([c for c, wave in enumerate(self.waves) if not wave.is_independent])
-        n_classes = len(classes)
 
         # create a uniform distribution for class labels -> np.array([2,1,3, ... ,1])
-        shuffled_indexes = np.arange(n_timestamps)
-        np.random.shuffle(shuffled_indexes)
-        labels = np.zeros(n_timestamps, dtype=int)
-        for c in range(n_classes):
-            labels[np.where(shuffled_indexes < c * n_timestamps // n_classes)] += 1
+        labels = create_label_distribution(len(timestamps), len(classes))
 
         # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
-        one_hots = np.zeros((n_timestamps, n_classes), dtype=float)
-        one_hots[(np.arange(n_timestamps), labels)] = 1
+        one_hots = create_one_hots_from_labels(labels, len(classes))
 
         # generate new mixed signal properties.
         props = {name: prop() for name, prop in self.mixed_signal_props.items()}
@@ -170,25 +165,6 @@ class MixedSignal:
             assert self.n_timestamps % self.window_size == 0
             self.n_samples = self.n_timestamps // self.window_size
 
-    def _create_label_distribution(self):
-        """
-        Create a distribution of ints which represent class labels.
-        self.labels -> np.array([2,1,3, ... ,1])
-        """
-        shuffled_indexes = np.arange(self.n_timestamps)
-        np.random.shuffle(shuffled_indexes)
-        self.labels = np.zeros(self.n_timestamps, dtype=int)
-        for s in range(self.n_classes):
-            self.labels[np.where(shuffled_indexes < s * self.n_timestamps // self.n_classes)] += 1
-
-    def _create_one_hots_from_labels(self):
-        """
-        Create one-hot vector from the class label distribution.
-        self.one_hots -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
-        """
-        self.one_hots = np.zeros((self.n_timestamps, self.n_classes), dtype=float)
-        self.one_hots[(np.arange(self.n_timestamps), self.labels)] = 1
-
     def _generate_signals_old(self):
         """ Generate waves from property values."""
         # generate new timestamps
@@ -210,7 +186,7 @@ class MixedSignal:
 
     def _generate(self):
         self._generate_signals()
-        self._create_one_hots_from_labels()
+        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
 
     def generate_sliding(self):
 

@@ -1,9 +1,11 @@
 import pytest
-# import numpy as np
+import numpy as np
 # from hypothesis import given
 # from hypothesis import example
 # from hypothesis import strategies as st
 from mixsig.utils import timesequence_generator
+from mixsig.utils import create_label_distribution
+from mixsig.utils import create_one_hots_from_labels
 
 
 @pytest.mark.parametrize('t_min,t_max,n_max,n_timestamps', [
@@ -67,3 +69,23 @@ def test_sequence_generator_pareto(pareto_shape):
             n_max=200,
             noise_type='pareto',
             pareto_shape=pareto_shape)
+def test_one_hot_encoder_decoder_0():
+    length = 20
+    n_classes = 3
+
+    sequence = create_label_distribution(length, n_classes)
+    assert sequence.shape == (length,)
+    assert np.max(sequence) == n_classes - 1
+
+    encoded = create_one_hots_from_labels(sequence, n_classes)
+    assert encoded.shape == (length, n_classes)
+    assert np.max(encoded) == 1
+
+    decoded = one_hot_decode(encoded)
+    assert decoded.shape == (length,)
+    assert np.max(decoded) == n_classes - 1
+
+    assert np.all(sequence == decoded)
+
+
+def test_one_hot_encoder_decoder_1():
