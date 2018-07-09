@@ -212,45 +212,6 @@ class MixedSignal:
         self._generate_signals()
         self._create_one_hots_from_labels()
 
-    def generate_sliding_new(self):
-
-        if self.network_type == 'MLP':
-            if self.sequence_type == 'many2one':
-                # MLP: many to one
-                self.X = np.lib.stride_tricks.as_strided(
-                    self.mixed_signal,
-                    shape=(self.n_samples, self.window_size),
-                    strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize)
-                )
-                self.y = self.one_hots[(self.window_size - 1):]
-            else:
-                raise NotImplementedError
-
-        else:
-            if self.sequence_type == 'many2one':
-                # RNN: many to one
-                self.X = np.lib.stride_tricks.as_strided(
-                    self.mixed_signal,
-                    shape=(self.n_samples, self.window_size, 1),
-                    strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
-                )
-                self.y = self.one_hots[(self.window_size - 1):]
-
-            elif self.sequence_type == 'many2many':
-                # RNN: many to many
-                self.X = np.lib.stride_tricks.as_strided(
-                    self.mixed_signal,
-                    shape=(self.n_samples, self.window_size, 1),
-                    strides=(self.mixed_signal.itemsize, self.mixed_signal.itemsize, self.mixed_signal.itemsize)
-                )
-                self.y = np.lib.stride_tricks.as_strided(
-                    self.one_hots,
-                    shape=(self.n_samples, self.window_size, self.n_classes),
-                    strides=(self.n_classes * self.one_hots.strides[1], self.one_hots.strides[0], self.one_hots.strides[1]),
-                )
-            else:
-                raise NotImplementedError
-
     def generate_sliding(self):
 
         # TODO: unit tests to make sure all these pathways are correct.
