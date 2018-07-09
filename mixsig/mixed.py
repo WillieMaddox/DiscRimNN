@@ -2,13 +2,11 @@ import os
 import json
 import threading
 import numpy as np
-# from .utils import TimeSequenceCoeffs
 from .utils import factors
 from .utils import get_datetime_now
 from .utils import timesequence_generator
 from .utils import create_label_distribution
 from .utils import create_one_hots_from_labels
-# from .waves import WaveProps
 from .waves import Wave
 from .waves import Amplitude
 from .waves import Frequency
@@ -35,7 +33,6 @@ class MixedSignal:
         self.n_groups = n_groups
         self.group_index = 0
         self.group_indices = None
-        self._n_classes = None
 
         # Should these be properties?
         self.labels = None
