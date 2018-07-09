@@ -46,7 +46,7 @@ def test_create_from_3_waves_0_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    batch_size=64
+    batch_size = 64
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
@@ -109,7 +109,7 @@ def test_create_from_2_waves_1_noise():
         'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
     }
 
-    batch_size=16
+    batch_size = 16
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
@@ -268,7 +268,6 @@ def test_create_from_3_waves_boxcar():
     assert msig.y.shape == (msig.n_timestamps / window_size, len(sigs_coeffs))
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
-
 
 
 @fixture
