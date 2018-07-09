@@ -40,12 +40,6 @@ def normal_noise_generator(mu=0, sigma=0.01):
     return gen_noise
 
 
-def no_noise():
-    def gen_noise(*args, **kwargs):
-        return 0
-    return gen_noise
-
-
 def timesequence_generator(t_min=None, t_max=None, n_max=None, n_min=None, noise_type=None, **kwargs):
     """
     If self.delta == 0 and self.dt == 1

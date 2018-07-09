@@ -5,7 +5,6 @@ from .utils import name_generator
 from .utils import color_generator
 from .utils import normal_noise_generator
 from .utils import uniform_noise_generator
-from .utils import no_noise
 from .utils import timesequence_generator
 
 
@@ -138,7 +137,7 @@ class Wave:
         elif 'normal' in noise:
             self._noise_generator = normal_noise_generator(**noise['normal'])
         else:
-            self._noise_generator = no_noise()
+            self._noise_generator = lambda *args, **kwargs: 0
 
         self.color = color_generator() if color is None else color
         self.name = name_generator() if name is None else name
@@ -166,12 +165,12 @@ class Wave:
     def generate(self, timestamps, **kwargs):
 
         t = self._timestamp_generator() if self.is_independent else timestamps
+        n = self._noise_generator(len(t))
         a = self.amplitude(**kwargs)
         f = self.frequency(**kwargs)
         o = self.offset(**kwargs)
         p = self.phase(**kwargs)
 
-        n = self._noise_generator(len(t))
         self._sample = a * np.sin(2.0 * np.pi * (f * t - p)) + o + n
         self.timestamps = t
         self.noise = n
