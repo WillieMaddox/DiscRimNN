@@ -149,7 +149,6 @@ class MixedSignal:
         if self.window_type == 'sliding':
             chop_index = (len(timestamps) - self.window_size + 1) % self.batch_size
         else:
-            assert len(timestamps) >= self.window_size * self.batch_size
             fact_a = factors(self.batch_size)
             fact_b = factors(self.window_size)
             gcm = max(fact_a.intersection(fact_b))
@@ -171,6 +170,7 @@ class MixedSignal:
             assert self.n_timestamps % self.window_size == 0
             self.n_samples = self.n_timestamps // self.window_size
 
+        assert self.n_samples % self.batch_size == 0
 
     def _generate(self):
         self._generate_signals()
