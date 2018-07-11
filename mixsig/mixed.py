@@ -97,6 +97,15 @@ class MixedSignal:
         self.model_weights_filename = os.path.join(self.out_dir, 'model_weights.h5')
         self.training_stats_filename = os.path.join(self.out_dir, 'training_stats.csv')
 
+    def _generate_signals_old(self):
+        """ Generate waves from property values."""
+        # generate new timestamps
+        self.timestamps = self.sequence_generator()
+        # generate new values for each mixed signal property.
+        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
+        # generate new single waves.
+        self._signals = np.vstack([wave.generate(**props) for wave in self.waves])
+
     def _generate_signals(self):
         """ Generate waves from property values."""
         # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
@@ -162,14 +171,10 @@ class MixedSignal:
             assert self.n_timestamps % self.window_size == 0
             self.n_samples = self.n_timestamps // self.window_size
 
-    def _generate_signals_old(self):
-        """ Generate waves from property values."""
-        # generate new timestamps
-        self.timestamps = self.sequence_generator()
-        # generate new values for each mixed signal property.
-        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
-        # generate new single waves.
-        self._signals = np.vstack([wave.generate(**props) for wave in self.waves])
+
+    def _generate(self):
+        self._generate_signals()
+        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
 
     def generate(self):
         self._generate()
@@ -180,10 +185,6 @@ class MixedSignal:
         else:
             raise ValueError('improper window_type: {}. Use "sliding" or "boxcar"')
         return self.X, self.y
-
-    def _generate(self):
-        self._generate_signals()
-        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
 
     def generate_sliding(self):
 
