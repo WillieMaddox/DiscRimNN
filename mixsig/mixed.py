@@ -41,13 +41,15 @@ class MixedSignal:
 
         self.batch_size = batch_size
         self.window_size = window_size
-        self.window_type = window_type.lower()
         self.network_type = network_type
         self.sequence_type = sequence_type
         self.name = name
 
+        if window_type is not None:
+            window_type = window_type.lower()
+            assert window_type in ('sliding', 'boxcar')
+        self.window_type = window_type
         assert self.network_type in ('MLP', 'RNN')
-        assert self.window_type in ('sliding', 'boxcar')
         assert self.sequence_type in ('many2one', 'many2many', 'many2one+time')
 
         if 'time' in msig_coeffs:
@@ -148,11 +150,14 @@ class MixedSignal:
         # clip data from the left so that it divisible by batch_size.
         if self.window_type == 'sliding':
             chop_index = (len(timestamps) - self.window_size + 1) % self.batch_size
-        else:
+        elif self.window_type == 'boxcar':
+            assert len(timestamps) >= self.window_size
             fact_a = factors(self.batch_size)
             fact_b = factors(self.window_size)
             gcm = max(fact_a.intersection(fact_b))
             chop_index = len(timestamps) % (self.window_size * self.batch_size // gcm)
+        else:
+            chop_index = len(timestamps) % self.batch_size
 
         sorted_indices = sorted_indices[chop_index:]
 
@@ -169,6 +174,9 @@ class MixedSignal:
         elif self.window_type == 'boxcar':
             assert self.n_timestamps % self.window_size == 0
             self.n_samples = self.n_timestamps // self.window_size
+        else:
+            assert self.n_timestamps % self.window_size == 0
+            self.n_samples = self.n_timestamps // self.window_size
 
         assert self.n_samples % self.batch_size == 0
 
@@ -182,8 +190,10 @@ class MixedSignal:
             self.generate_sliding()
         elif self.window_type == 'boxcar':
             self.generate_boxcar()
+        elif self.window_type is None:
+            self.generate_sliding()
         else:
-            raise ValueError('improper window_type: {}. Use "sliding" or "boxcar"')
+            raise ValueError('improper window_type: {}. Use "sliding" or "boxcar" or None')
         return self.X, self.y
 
     def generate_sliding(self):
