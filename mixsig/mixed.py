@@ -75,7 +75,7 @@ class MixedSignal:
 
         self.n_classes = len(self.waves)
 
-        run_label = run_label or get_datetime_now()
+        run_label = run_label or get_datetime_now(fmt='%Y_%m%d_%H%M')
 
         self.config_dict = {
             'run_label': run_label,
