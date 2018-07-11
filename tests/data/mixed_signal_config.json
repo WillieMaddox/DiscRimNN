@@ -3,6 +3,7 @@
     "window_size": 10,
     "window_type": "sliding",
     "network_type": "RNN",
+    "sequence_code": "xw1_xc",
     "sequence_type": "many2one",
     "sigs_coeffs": [
         {

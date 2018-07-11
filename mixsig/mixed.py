@@ -24,13 +24,13 @@ class MixedSignal:
                  network_type='RNN',
                  sequence_code='t_tc',
                  run_label=None,
-                 name='Mixed',
-                 n_groups=5):
+                 n_groups=5,
+                 name='Mixed'):
 
         self.lock = threading.Lock()
-        self.n_groups = n_groups
         self.group_index = 0
         self.group_indices = None
+        self.n_groups = n_groups
         self.X = None
         self.y = None
 
@@ -130,16 +130,15 @@ class MixedSignal:
         # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
         # generate new timestamps
         timestamps = self.sequence_generator()
-        classes = np.array([c for c, wave in enumerate(self.waves) if not wave.is_independent])
-
-        # create a uniform distribution for class labels -> np.array([2,1,3, ... ,1])
-        labels = create_label_distribution(len(timestamps), len(classes))
-
-        # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
-        one_hots = create_one_hots_from_labels(labels, len(classes))
-
         # generate new mixed signal properties.
         props = {name: prop() for name, prop in self.mixed_signal_props.items()}
+
+        # get the class labels for the waves that will generate the mixed_signal
+        classes = np.array([c for c, wave in enumerate(self.waves) if not wave.is_independent])
+        # create a uniform distribution of class labels -> np.array([2,1,3, ... ,1])
+        labels = create_label_distribution(len(timestamps), len(classes))
+        # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
+        one_hots = create_one_hots_from_labels(labels, len(classes))
 
         # generate new individual waves.
         for wave in self.waves:
@@ -151,7 +150,7 @@ class MixedSignal:
         # make sure the labels align with the classes.
         labels = classes[labels]
 
-        # Now append all the timestamp independent waves to the mixed signal.
+        # Now append the remaining independent waves to the end of the mixed_signal.
         for c, wave in enumerate(self.waves):
             if wave.is_independent:
                 timestamps = np.append(timestamps, wave.timestamps)
@@ -197,7 +196,7 @@ class MixedSignal:
             assert self.n_timestamps % self.window_size == 0
             self.n_samples = self.n_timestamps // self.window_size
 
-        assert self.n_samples % self.batch_size == 0
+        # assert self.n_samples % self.batch_size == 0
 
     def generate(self):
         self._generate_signals()

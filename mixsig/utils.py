@@ -132,11 +132,6 @@ def timesequence_generator(t_min=None, t_max=None, n_max=None, n_min=None, noise
     return gen_timesequence
 
 
-# generate a sequence of random numbers in [0, n_features)
-def generate_sequence(length, n_classes):
-    return np.random.randint(0, n_classes, length)
-
-
 def create_label_distribution(n_timestamps, n_classes):
     """
     Create a distribution of ints which represent class labels.
@@ -159,6 +154,11 @@ def create_one_hots_from_labels(labels, n_classes):
     one_hots = np.zeros((length, n_classes), dtype=float)
     one_hots[(np.arange(length), labels)] = 1
     return one_hots
+
+
+# generate a sequence of random numbers in [0, n_classes)
+def generate_sequence(length, n_classes):
+    return np.random.randint(0, n_classes, length)
 
 
 # one hot encode sequence
