@@ -269,6 +269,11 @@ class MixedSignal:
                 raise NotImplementedError
 
     def generate_group(self, n_msigs, shuffle_inplace=False):
+        # examples:
+        # n_samples = 1
+        # (1088, 100, 1) -> (1 * 1088, 100, 1) -> (1088, 100, 1)
+        # n_samples = 32
+        # (1088, 100, 1) -> (32 * 1088, 100, 1) -> (34816, 100, 1)
         x, y = self.generate()
         for i in range(n_msigs - 1):
             xi, yi = self.generate()
@@ -283,6 +288,26 @@ class MixedSignal:
             return x[indices], y[indices]
         else:
             return x, y, indices, n_batches
+
+    def generate_samples(self, n_samples):
+        # examples:
+        # n_samples = 0
+        # (1088, 1) -> (1088, 1)
+        # n_samples = 1
+        # (1088, 1) -> (1, 1088, 1)
+        # n_samples = 32
+        # (1088, 1) -> (32, 1088, 1)
+        if n_samples < 1:
+            raise ValueError('n_samples must be >= 1')
+        x_arr = []
+        y_arr = []
+        for i in range(n_samples):
+            xi, yi = self.generate()
+            x_arr.append(xi)
+            y_arr.append(yi)
+        x = np.stack(x_arr)
+        y = np.stack(y_arr)
+        return x, y
 
     def generator(self, n_msigs, batch_size, training=False):
         x, y, indices, n_batches = self.generate_group(n_msigs)
