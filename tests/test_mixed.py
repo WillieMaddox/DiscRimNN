@@ -209,15 +209,38 @@ def test_invalid_window_type():
         )
 
 
+def test_invalid_sequence_code1():
+    with pytest.raises(AssertionError):
+        MixedSignal(
+            [{'offset': {'mean': -0.1}}],
+            window_type='sliding',
+            sequence_code='xwh_xwc',
+            run_label='test'
+        )
+
+
+def test_invalid_sequence_code2():
+    with pytest.raises(AssertionError):
+        MixedSignal(
+            [{'offset': {'mean': -0.1}}],
+            window_type='sliding',
+            sequence_code='xw1_xwg',
+            run_label='test'
+        )
+
+
 def test_generate_sliding():
     wave1_coeffs = {'offset': {'mean': -0.1}}
     wave2_coeffs = {'offset': {'mean': 0.0}}
     wave3_coeffs = {'offset': {'mean': 0.1}}
     sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
-    msig_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 500}}
 
-    batch_size = 128
-    window_size = 10
+    batch_size = 1
+    window_size = 0
+    n_timestamps = 500
+
+    msig_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
@@ -237,6 +260,9 @@ def test_generate_sliding():
     assert msig.n_classes == len(msig.waves) == len(sigs_coeffs)
     assert len(X) % batch_size == 0
     assert len(y) % batch_size == 0
+
+    if window_size < 1 or window_size > n_timestamps:
+        window_size = n_timestamps
 
     sequence_codes = {
         't_t': {
@@ -274,10 +300,12 @@ def test_generate_boxcar():
     wave2_coeffs = {'offset': {'mean': 0.0}}
     wave3_coeffs = {'offset': {'mean': 0.1}}
     sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
-    msig_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 500}}
 
     batch_size = 1
-    window_size = 100
+    window_size = 0
+    n_timestamps = 500
+
+    msig_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
 
     msig = MixedSignal(
         sigs_coeffs,
@@ -300,6 +328,10 @@ def test_generate_boxcar():
     assert len(y) % batch_size == 0
     assert np.all(msig.X == X)
     assert np.all(msig.y == y)
+
+    if window_size < 1 or window_size > n_timestamps:
+        window_size = n_timestamps
+
     assert msig.n_timestamps % window_size == 0
     assert msig.X.shape == (msig.n_timestamps // window_size, window_size, 1)
     assert msig.y.shape == (msig.n_timestamps // window_size, len(sigs_coeffs))
