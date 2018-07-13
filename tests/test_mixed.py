@@ -61,10 +61,11 @@ def test_create_from_3_waves_0_noise():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
-    assert len(X) % batch_size == 0
-    assert len(y) % batch_size == 0
-    assert len(msig.X) % batch_size == 0
-    assert len(msig.y) % batch_size == 0
+    # TODO: test separately for statefullness
+    # assert len(X) % batch_size == 0
+    # assert len(y) % batch_size == 0
+    # assert len(msig.X) % batch_size == 0
+    # assert len(msig.y) % batch_size == 0
     assert np.all(msig.X == X)
     assert np.all(msig.y == y)
     assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
@@ -124,10 +125,11 @@ def test_create_from_2_waves_1_noise():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
-    assert len(X) % batch_size == 0
-    assert len(y) % batch_size == 0
-    assert len(msig.X) % batch_size == 0
-    assert len(msig.y) % batch_size == 0
+    # TODO: test separately for statefullness
+    # assert len(X) % batch_size == 0
+    # assert len(y) % batch_size == 0
+    # assert len(msig.X) % batch_size == 0
+    # assert len(msig.y) % batch_size == 0
     assert np.all(msig.X == X)
     assert np.all(msig.y == y)
     assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
@@ -188,10 +190,11 @@ def test_create_from_1_waves_2_noise():
     # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
-    assert len(X) % batch_size == 0
-    assert len(y) % batch_size == 0
-    assert len(msig.X) % batch_size == 0
-    assert len(msig.y) % batch_size == 0
+    # TODO: test separately for statefullness
+    # assert len(X) % batch_size == 0
+    # assert len(y) % batch_size == 0
+    # assert len(msig.X) % batch_size == 0
+    # assert len(msig.y) % batch_size == 0
     assert np.all(msig.X == X)
     assert np.all(msig.y == y)
     assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)

@@ -167,6 +167,7 @@ class MixedSignal:
         mixed_signal = np.sum(one_hots.T * signals, axis=0)
 
         # make sure the labels align with the classes.
+        # TODO: refactor this.  It's confusing.
         labels = classes[labels]
 
         # Now append the remaining independent waves to the end of the mixed_signal.
@@ -215,23 +216,29 @@ class MixedSignal:
         self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
         # window_type, window_size
 
-        # sliding, ws < 1                ->  raise same as (sliding, n_timestamps)
+        # sliding, ws < 0                ->  raise ValueError('window_size must be non negative')
+        # boxcar , ws < 0                ->  raise ValueError('window_size must be non negative')
+        # random , ws < 0                ->  raise ValueError('window_size must be non negative')
+
+        # sliding, ws = 0                ->  (sliding, n_timestamps)
+        # boxcar , ws = 0                ->  (boxcar, n_timestamps)
+        # random , ws = 0                ->  (random, n_timestamps)
+
         # sliding, ws = 1                ->  valid same as (boxcar, 1)
+        # boxcar , ws = 1                ->  valid same as (sliding, 1)
+        # random , ws = 1                ->  raise NotImplementedError
+
         # sliding, 1 < ws < n_timestamps ->  valid
-        # sliding, n_timestamps = ws     ->  valid same as (boxcar, n_timestamps)
+        # boxcar , 1 < ws < n_timestamps ->  valid
+        # random , 1 < ws < n_timestamps ->  valid
+
+        # sliding, n_timestamps = ws     ->  valid same as boxcar and random
+        # boxcar , n_timestamps = ws     ->  valid same as sliding and random
+        # random , n_timestamps = ws     ->  valid same as sliding and boxcar
+
         # sliding, n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
-
-        # boxcar, ws < 1                ->  raise same as (boxcar, n_timestamps)
-        # boxcar, ws = 1                ->  valid same as (sliding, 1)
-        # boxcar, 1 < ws < n_timestamps ->  valid
-        # boxcar, n_timestamps = ws     ->  valid same as (sliding, n_timestamps)
-        # boxcar, n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
-
-        # random, ws < 1                ->  raise same as (random, n_timestamps)
-        # random, ws = 1                ->  raise NotImplementedError
-        # random, 1 < ws < n_timestamps ->  valid
-        # random, n_timestamps = ws     ->  valid same as (sliding, n_timestamps)
-        # random, n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
+        # boxcar , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
+        # random , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
 
         if self.window_type == 'sliding':
             self.X, self.y = self.generate_sliding()
