@@ -17,10 +17,11 @@ class MixedSignal:
                  sigs_coeffs,
                  msig_coeffs=None,
                  batch_size=1,
-                 window_size=1,
+                 window_size=0,
                  window_type='sliding',
                  network_type='RNN',
                  sequence_code='t_tc',
+                 stateful=False,
                  run_label=None,
                  n_groups=5,
                  name='Mixed'):
@@ -31,6 +32,9 @@ class MixedSignal:
         self.X = None
         self.y = None
 
+        if stateful:
+            assert batch_size > 0
+        self.stateful = stateful
         self.batch_size = batch_size
 
         # Should these be properties?
@@ -103,21 +107,62 @@ class MixedSignal:
     @property
     def n_samples(self):
         if self._n_samples is None:
-            if self.window_size is None:  # then window_size will become n_timestamps. Delayed.
-                self._n_samples = 1
+            if self.n_timestamps is None:  # then window_size will become n_timestamps. Delayed.
+                self._n_samples = None
             else:
                 if self.window_type == 'boxcar':
                     assert self.n_timestamps % self.window_size == 0
                     self._n_samples = self.n_timestamps // self.window_size
                 else:
                     self._n_samples = self.n_timestamps - self.window_size + 1
+
         return self._n_samples
+
+    @n_samples.setter
+    def n_samples(self, val):
+        if val == 0:
+            val = self.n_timestamps
+
+        if self.window_type == 'boxcar' and self.n_timestamps % val != 0:
+            raise ValueError('n_samples must divide n_timestamps evenly when using boxcar')
+
+        if val < 0 or val > self.n_timestamps:
+            raise ValueError('n_samples must be in the range [0, n_timestamps]')
+
+        if 1 <= val <= self.n_timestamps:
+            self._n_samples = val
+            self._window_size = None
 
     @property
     def window_size(self):
         if self._window_size is None:
-            self._window_size = self.n_timestamps
+            if self.n_timestamps is None:
+                self._window_size = None
+            else:
+                if self.window_type == 'boxcar':
+                    assert self.n_timestamps % self.window_size == 0
+                    self._window_size = self.n_timestamps // self.n_samples
+                else:
+                    self._window_size = self.n_timestamps - self.n_samples + 1
+
         return self._window_size
+
+    @window_size.setter
+    def window_size(self, val):
+        if val == 0:
+            val = self.n_timestamps
+
+        if self.window_type == 'boxcar' and self.n_timestamps % val != 0:
+            raise ValueError('window_size must divide n_timestamps evenly when using boxcar')
+
+        if val < 0 or val > self.n_timestamps:
+            raise ValueError('window_size must be in the range [0, n_timestamps]')
+
+        if 1 <= val <= self.n_timestamps:
+            self._window_size = val
+            self._n_samples = None
+
+
 
     @property
     def sequence_type(self):
@@ -180,25 +225,20 @@ class MixedSignal:
         assert len(timestamps) == len(mixed_signal) == len(labels)
 
         # Store the indices to the ordered timestamps.
-        sorted_indices = np.argsort(timestamps)
+        # sorted_indices = np.argsort(timestamps)
 
-        if self.window_size is not None:
-            chop_index = 0
-            # clip data from the left so that it divides batch_size evenly.
+        batch_size = self.batch_size if self.stateful else 1
+        window_size = self.window_size if self.window_size is not None else 1
 
-            if self.batch_size > 1:
-                if self.window_type == 'sliding':
-                    chop_index = (len(timestamps) - self.window_size + 1) % self.batch_size
-                elif self.window_type == 'boxcar':
-                    assert len(timestamps) >= self.window_size * self.batch_size
-                    chop_index = len(timestamps) % (self.window_size * self.batch_size)
+        # clip data from the left so that it divides batch_size evenly.
+        if self.window_type == 'boxcar':
+            assert len(timestamps) >= window_size * batch_size
+            chop_index = len(timestamps) % (window_size * batch_size)
+        else:  # ('sliding' and 'random')
+            chop_index = (len(timestamps) - window_size + 1) % batch_size
 
-            elif self.batch_size == 1:
-                if self.window_type == 'boxcar':
-                    assert len(timestamps) >= self.window_size
-                    chop_index = len(timestamps) % self.window_size
-            # Sort the labels and mixed_signal chronologically.
-            sorted_indices = sorted_indices[chop_index:]
+        # Sort the labels and mixed_signal chronologically.
+        sorted_indices = np.argsort(timestamps)[chop_index:]
 
         self.mixed_signal = mixed_signal[sorted_indices]
         self.labels = labels[sorted_indices]
@@ -206,6 +246,8 @@ class MixedSignal:
         self.n_timestamps = len(self.timestamps)
         self.t_min = self.timestamps[0]
         self.t_max = self.timestamps[-1]
+        if self._window_size is None:
+            self.window_size = self.n_timestamps
 
         # assert self.n_samples % self.batch_size == 0
 
