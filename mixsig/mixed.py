@@ -1,17 +1,15 @@
 import os
 import json
-import threading
 import numpy as np
-from .utils import factors
 from .utils import get_datetime_now
 from .utils import timesequence_generator
 from .utils import create_label_distribution
 from .utils import create_one_hots_from_labels
-from .waves import Wave
 from .waves import Amplitude
 from .waves import Frequency
 from .waves import Offset
 from .waves import Phase
+from .waves import Wave
 
 
 class MixedSignal:
@@ -27,12 +25,13 @@ class MixedSignal:
                  n_groups=5,
                  name='Mixed'):
 
-        self.lock = threading.Lock()
         self.group_index = 0
         self.group_indices = None
         self.n_groups = n_groups
         self.X = None
         self.y = None
+
+        self.batch_size = batch_size
 
         # Should these be properties?
         self.name = name
@@ -41,7 +40,7 @@ class MixedSignal:
         self.mixed_signal = None
         self.n_timestamps = None
         self._n_samples = None
-        self.batch_size = batch_size
+
         self._window_size = None if window_size < 1 else window_size
 
         self.window_type = window_type.lower()
@@ -107,11 +106,11 @@ class MixedSignal:
             if self.window_size is None:  # then window_size will become n_timestamps. Delayed.
                 self._n_samples = 1
             else:
-                if self.window_type in ('sliding', 'random'):
-                    self._n_samples = self.n_timestamps - self.window_size + 1
-                elif self.window_type == 'boxcar':
+                if self.window_type == 'boxcar':
                     assert self.n_timestamps % self.window_size == 0
                     self._n_samples = self.n_timestamps // self.window_size
+                else:
+                    self._n_samples = self.n_timestamps - self.window_size + 1
         return self._n_samples
 
     @property
@@ -201,10 +200,9 @@ class MixedSignal:
             # Sort the labels and mixed_signal chronologically.
             sorted_indices = sorted_indices[chop_index:]
 
-        self.timestamps = timestamps[sorted_indices]
         self.mixed_signal = mixed_signal[sorted_indices]
         self.labels = labels[sorted_indices]
-
+        self.timestamps = timestamps[sorted_indices]
         self.n_timestamps = len(self.timestamps)
         self.t_min = self.timestamps[0]
         self.t_max = self.timestamps[-1]
