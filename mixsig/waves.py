@@ -1,4 +1,4 @@
-import types
+import numbers
 from math import isclose
 import numpy as np
 from .utils import name_generator
@@ -8,7 +8,7 @@ from .utils import uniform_noise_generator
 from .utils import timesequence_generator
 
 
-class WaveProperty(float):
+class WavePropertyOld(float):
     def __new__(cls, mean=None, delta=None):
         mean = 0.0 if mean is None else float(mean)
         return super().__new__(cls, mean)
@@ -20,7 +20,7 @@ class WaveProperty(float):
         self.mean = mean
         self.delta = delta
 
-        if isclose(delta, 0):
+        if isclose(delta, 0, abs_tol=1e-9):
             self.generate = lambda: self
         else:
             self.generate = self._generator(delta)
@@ -34,7 +34,7 @@ class WaveProperty(float):
         return inner
 
 
-class Amplitude(WaveProperty):
+class AmplitudeOld(WavePropertyOld):
 
     def __new__(cls, mean=None, delta=None):
         mean = 1.0 if mean is None else float(mean)
@@ -55,7 +55,7 @@ class Amplitude(WaveProperty):
         return inner
 
 
-class Frequency(WaveProperty):
+class FrequencyOld(WavePropertyOld):
 
     def __new__(cls, mean=None, delta=None):
         mean = 1.0 if mean is None else float(mean)
@@ -77,7 +77,7 @@ class Frequency(WaveProperty):
         return inner
 
 
-class Offset(WaveProperty):
+class OffsetOld(WavePropertyOld):
 
     def __call__(self, offset=0, **kwargs) -> float:
         return offset + self.generate()
@@ -90,10 +90,164 @@ class Offset(WaveProperty):
         return inner
 
 
-class Phase(WaveProperty):
+class PhaseOld(WavePropertyOld):
 
     def __call__(self, phase=0, **kwargs) -> float:
         return phase + self.generate()
+
+    def _generator(self, delta):
+        def inner():
+            return np.random.random()  # later on this will be scaled by 2*pi
+        return inner
+
+
+class WaveProperty:
+
+    def __init__(self, mean=None, delta=None):
+        self.value = 0.0 if mean is None else float(mean)
+        self.delta = 0.0 if delta is None else float(delta)
+
+        if isclose(self.delta, 0, abs_tol=1e-9):
+            self.generate = lambda: self.value
+        else:
+            self.generate = self._generator(self.delta)
+
+    def __call__(self, **kwargs) -> float:
+        self.value = self.generate()
+        return self.value
+
+    def _generator(self, delta):
+        def inner():
+            return self + (2 * np.random.random() - 1) * delta  # i.e. np.random.uniform(self - delta, self + delta)
+        return inner
+
+    # def __repr__(self):
+    #     return f'WaveProperty(mean={self.value}, delta={self.delta})'
+
+    def __repr__(self):
+        return f'{self.value}'
+
+    def __add__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value + other.value
+        elif isinstance(other, numbers.Real):
+            return self.value + other
+        else:
+            raise NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, numbers.Real):
+            return other + self.value
+        else:
+            raise TypeError(f'Can only add values of type {numbers.Real}, not of type {type(other)}')
+
+    def __mul__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value * other.value
+        elif isinstance(other, numbers.Real):
+            return self.value * other
+        else:
+            raise NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, numbers.Real):
+            return other * self.value
+        else:
+            raise TypeError(f'Can only multiply values of type {numbers.Real}, not of type {type(other)}')
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value == other.value
+        elif isinstance(other, numbers.Real):
+            return self.value == other
+        else:
+            raise NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value != other.value
+        elif isinstance(other, numbers.Real):
+            return self.value != other
+        else:
+            raise NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value > other.value
+        elif isinstance(other, numbers.Real):
+            return self.value > other
+        else:
+            raise NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value < other.value
+        elif isinstance(other, numbers.Real):
+            return self.value < other
+        else:
+            raise NotImplemented
+
+
+class Amplitude(WaveProperty):
+
+    def __init__(self, mean=None, delta=None):
+        mean = 1.0 if mean is None else float(mean)
+        super().__init__(mean, delta)
+
+    def __call__(self, amplitude=1, **kwargs) -> float:
+        self.value = self.generate()
+        return self.value * amplitude
+
+    def _generator(self, delta):
+        a_min, a_max = self.value - delta, self.value + delta
+
+        def inner():
+            return np.random.uniform(a_min, a_max)
+        return inner
+
+    # def __repr__(self):
+    #     return f'Amplitude(mean={self.value}, delta={self.delta})'
+
+
+class Frequency(WaveProperty):
+
+    def __init__(self, mean=None, delta=None):
+        mean = 1.0 if mean is None else float(mean)
+        super().__init__(mean, delta)
+
+    def __call__(self, frequency=1, **kwargs) -> float:
+        self.value = self.generate()
+        return self.value * frequency
+
+    def _generator(self, delta):
+        f_min, f_max = self.value - delta, self.value + delta
+
+        def inner():
+            # This distribution breaks when self.value == delta.
+            # return 1. / np.random.uniform(1. / f_max, 1. / f_min)
+            return np.random.uniform(f_max, f_min)
+        return inner
+
+
+class Offset(WaveProperty):
+
+    def __call__(self, offset=0, **kwargs) -> float:
+        self.value = self.generate()
+        return self.value + offset
+
+    def _generator(self, delta):
+        b_min, b_max = self.value - delta, self.value + delta
+
+        def inner():
+            return np.random.uniform(b_min, b_max)
+        return inner
+
+
+class Phase(WaveProperty):
+
+    def __call__(self, phase=0, **kwargs) -> float:
+        self.value = self.generate()
+        return self.value + phase
 
     def _generator(self, delta):
         def inner():

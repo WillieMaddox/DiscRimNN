@@ -5,6 +5,11 @@ from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st
 from mixsig.utils import timesequence_generator
+from mixsig.waves import WavePropertyOld
+from mixsig.waves import AmplitudeOld
+from mixsig.waves import FrequencyOld
+from mixsig.waves import OffsetOld
+from mixsig.waves import PhaseOld
 from mixsig.waves import WaveProperty
 from mixsig.waves import Amplitude
 from mixsig.waves import Frequency
@@ -12,8 +17,8 @@ from mixsig.waves import Offset
 from mixsig.waves import Phase
 from mixsig.waves import Wave
 
-waveproperty = st.builds(
-    WaveProperty,
+wavepropertyold = st.builds(
+    WavePropertyOld,
     mean=st.one_of(
         st.none(),
         st.integers(min_value=1e-13, max_value=1e13),
@@ -27,15 +32,9 @@ waveproperty = st.builds(
 )
 
 
-@given(waveproperty)
-def test_waveproperty_output_is_float(wp):
-    assert isinstance(wp, float)
-    assert isinstance(wp(), float)
-
-
-@given(waveproperty)
-def test_waveproperty_generator_a(wp):
-    if isclose(wp.delta, 0):
+@given(wavepropertyold)
+def test_wavepropertyold_generator_a(wp):
+    if isclose(wp.delta, 0, abs_tol=1e-9):
         assert wp == wp(), f'{wp.mean} {wp.delta}'
     else:
         assert wp != wp(), f'{wp.mean} {wp.delta}'
@@ -58,14 +57,145 @@ def test_waveproperty_generator_a(wp):
     (None, 1),
     (None, 1.0),
 ], ids=repr)
-@pytest.mark.parametrize('Wp', [WaveProperty, Amplitude, Frequency, Offset, Phase], ids=repr)
-def test_waveproperty_generator_b(Wp, mean, delta):
+@pytest.mark.parametrize('Wp', [WavePropertyOld, AmplitudeOld, FrequencyOld, OffsetOld, PhaseOld], ids=repr)
+def test_wavepropertyold_generator_b(Wp, mean, delta):
     wp = Wp(mean, delta)
+    assert isinstance(wp, Wp)
+    assert isinstance(wp(), float)
     assert wp == wp.mean
+    wp0 = wp()
+    wp1 = wp()
     if isclose(wp.delta, 0):
-        assert wp == wp(), f'{wp.mean} {wp.delta}'
+        assert wp0 == wp1
+        assert wp1 == wp0
     else:
-        assert wp != wp(), f'{wp.mean} {wp.delta}'
+        assert id(wp0) != id(wp1)
+        assert wp0 != wp1
+        assert wp1 != wp0
+
+
+waveproperty = st.builds(
+    WaveProperty,
+    mean=st.one_of(
+        st.none(),
+        st.integers(min_value=1e-13, max_value=1e13),
+        st.floats(min_value=1e-13, max_value=1e13, allow_infinity=False, allow_nan=False)
+    ),
+    delta=st.one_of(
+        st.none(),
+        st.integers(min_value=0.0, max_value=1e5),
+        st.floats(min_value=0.0, max_value=1e5, allow_infinity=False, allow_nan=False)
+    )
+)
+
+
+@given(waveproperty)
+def test_waveproperty_generator_a(wp):
+    wp0 = wp()
+    wp1 = wp()
+    if isclose(wp.delta, 0, abs_tol=1e-9):
+        assert isclose(wp0, wp1), f'{wp.value} {wp.delta}'
+        assert isclose(wp1, wp0), f'{wp.value} {wp.delta}'
+    else:
+        assert wp0 != wp1, f'{wp.value} {wp.delta}'
+        assert wp1 != wp0, f'{wp.value} {wp.delta}'
+
+
+@pytest.mark.parametrize('value,delta', [
+    (5, None),
+    (5, 0.0),
+    (5, 0),
+    (5, 1),
+    (5, 1.0),
+    (5.0, None),
+    (5.0, 0.0),
+    (5.0, 0),
+    (5.0, 1),
+    (5.0, 1.0),
+    (None, None),
+    (None, 0.0),
+    (None, 0),
+    (None, 1),
+    (None, 1.0),
+], ids=repr)
+@pytest.mark.parametrize('Wp', [WaveProperty, Amplitude, Frequency, Offset, Phase], ids=repr)
+def test_waveproperty_generator_b(Wp, value, delta):
+    wp = Wp(value, delta)
+    assert isinstance(wp, Wp)
+    assert isinstance(wp(), float)
+    assert wp == wp.value
+    wp0 = wp()
+    wp1 = wp()
+
+    if isclose(wp.delta, 0):
+        assert wp0 == wp1
+        assert wp1 == wp0
+    else:
+        assert id(wp0) != id(wp1)
+        assert wp0 != wp1
+        assert wp1 != wp0
+
+
+@pytest.mark.parametrize('Wp,key', [
+    (WaveProperty, 'dummy'),
+    (Amplitude, 'amplitude'),
+    (Frequency, 'frequency'),
+    (Offset, 'offset'),
+    (Phase, 'phase'),
+], ids=repr)
+def test_waveproperty_call(Wp, key):
+    wp = Wp()
+    kwargs = {'dummy': 0, 'amplitude': 6.0, 'frequency': 7.0, 'offset': 8.0, 'phase': 9.0}
+    wp0 = wp()
+    assert wp0 == wp
+
+    wp1 = wp(**kwargs)
+    if key in ('amplitude', 'frequency'):
+        assert isclose(wp * kwargs[key], wp1)
+    else:
+        assert isclose(wp + kwargs[key], wp1)
+
+
+@pytest.mark.parametrize('Wp1', [WaveProperty, Amplitude, Frequency, Offset, Phase], ids=repr)
+@pytest.mark.parametrize('Wp2', [WaveProperty, Amplitude, Frequency, Offset, Phase], ids=repr)
+def test_waveproperty_dunders(Wp1, Wp2):
+    mean1 = 4
+    mean2 = 8
+    wp1 = Wp1(mean1)
+    wp2 = Wp2(mean2)
+    if not isinstance(wp1, Wp2) and not isinstance(wp2, Wp1):
+        with pytest.raises(TypeError):
+            _ = wp1 + wp2
+        with pytest.raises(TypeError):
+            _ = wp1 * wp2
+        with pytest.raises(TypeError):
+            _ = wp1 == wp2
+        with pytest.raises(TypeError):
+            _ = wp1 != wp2
+        with pytest.raises(TypeError):
+            _ = wp1 < wp2
+        with pytest.raises(TypeError):
+            _ = wp1 > wp2
+    elif isinstance(wp1, Wp2) and isinstance(wp2, Wp1):
+        assert wp1 + wp2 == wp1.value + wp2.value
+        assert wp1 * wp2 == wp1.value * wp2.value
+        assert 4 + wp1 == wp2
+        assert 2 * wp1 == wp2
+        assert wp1 == Wp2(mean1)
+        assert wp1 != wp2
+        assert wp1 != mean2
+        assert 2 < wp1 < wp2 < 10 and 10 > wp2 > wp1 > 2
+        with pytest.raises(TypeError):
+            _ = wp1 + 'abc'
+        with pytest.raises(TypeError):
+            _ = wp1 * 'abc'
+        with pytest.raises(TypeError):
+            _ = 'abc' + wp1
+        with pytest.raises(TypeError):
+            _ = 'abc' * wp1
+    else:
+        assert mean2 + wp1 == wp2 + mean1
+        assert mean2 * wp1 == wp2 * mean1
 
 
 def test_wave_default_kwargs():
