@@ -280,8 +280,6 @@ def test_generate_sliding():
 
     for sequence_code, shapes in sequence_codes.items():
         X, y = msig.generate_sliding(sequence_code)
-        assert len(X.shape) == len(shapes['x']), print(sequence_code)
-        assert len(y.shape) == len(shapes['y']), print(sequence_code)
         assert X.shape == shapes['x'], print(sequence_code)
         assert y.shape == shapes['y'], print(sequence_code)
 
@@ -350,8 +348,6 @@ def test_generate_boxcar():
 
     for sequence_code, shapes in sequence_codes.items():
         X, y = msig.generate_boxcar(sequence_code)
-        assert len(X.shape) == len(shapes['x']), print(sequence_code)
-        assert len(y.shape) == len(shapes['y']), print(sequence_code)
         assert X.shape == shapes['x'], print(sequence_code)
         assert y.shape == shapes['y'], print(sequence_code)
 
