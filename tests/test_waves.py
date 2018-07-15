@@ -321,3 +321,60 @@ def test_wave_with_timestamp_noise(n_min, n_max, noise_type, delta, pareto_shape
     wave = Wave(**params)
     wave.generate(ts)
     assert len(wave.sample) == len(ts)
+
+
+def test_wave_with_1_feature():
+    n_timestamps = 201
+    features = ('x',)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=2.0, n_max=n_timestamps)
+    ts = sequence_generator()
+    params = {
+        'amplitude': {'mean': 1},
+        'frequency': {'mean': 1},
+    }
+    wave = Wave(*features, **params)
+    wave.generate(ts)
+    assert wave.inputs.shape == (n_timestamps, len(features))
+
+
+def test_wave_with_2_features():
+    n_timestamps = 201
+    features = ('x', 'dxdt')
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=2.0, n_max=n_timestamps)
+    ts = sequence_generator()
+    params = {
+        'amplitude': {'mean': 1},
+        'frequency': {'mean': 1},
+    }
+    wave = Wave(*features, **params)
+    wave.generate(ts)
+    assert wave.inputs.shape == (n_timestamps, len(features))
+
+
+def test_wave_with_3_features():
+    n_timestamps = 201
+    features = ('d0xdt0', 'd3xdt3', 'd2xdt2')
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=2.0, n_max=n_timestamps)
+    ts = sequence_generator()
+    params = {
+        'amplitude': {'mean': 1},
+        'frequency': {'mean': 1},
+    }
+    wave = Wave(*features, **params)
+    wave.generate(ts)
+    assert wave.inputs.shape == (n_timestamps, len(features))
+
+
+def test_wave_raises_invalid_feature():
+    n_timestamps = 201
+    features = ('dydz2',)
+    sequence_generator = timesequence_generator(t_min=0.0, t_max=2.0, n_max=n_timestamps)
+    ts = sequence_generator()
+    params = {
+        'amplitude': {'mean': 1},
+        'frequency': {'mean': 1},
+    }
+    with pytest.raises(ValueError):
+        wave = Wave(*features, **params)
+        wave.generate(ts)
+        _ = wave.inputs

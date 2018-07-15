@@ -1,4 +1,5 @@
 import numbers
+from collections import namedtuple
 from math import isclose
 import numpy as np
 from .utils import name_generator
@@ -6,6 +7,8 @@ from .utils import color_generator
 from .utils import normal_noise_generator
 from .utils import uniform_noise_generator
 from .utils import timesequence_generator
+
+WaveProps = namedtuple('WaveProps', 'a w o p')
 
 
 class WavePropertyOld(float):
@@ -257,6 +260,7 @@ class Phase(WaveProperty):
 
 class Wave:
     def __init__(self,
+                 *features,
                  time=None,
                  amplitude=None,
                  frequency=None,
@@ -295,9 +299,16 @@ class Wave:
         self.color = color or color_generator()
         self.name = name or name_generator()
 
+        self.features = features or ('x',)
+
+        self._wp = None
         self._sample = None
+        self._inputs = None
+
     @property
     def sample(self):
+        if self._sample is None:
+            self._sample = self.d0xdt0()
         return self._sample
 
     @property
@@ -307,23 +318,52 @@ class Wave:
     def __len__(self):
         return len(self.timestamps)
 
-    # @property
-    # def timestamps(self):
-    #     return self._timestamps()
-
-    def generate(self, timestamps, **kwargs):
-
-        t = self._timestamp_generator() if self.is_independent else timestamps
-        n = self._noise_generator(len(t))
+    def generate(self, ts, **kwargs):
+        self.timestamps = self._timestamp_generator() if self.is_independent else ts
+        self.noise = self._noise_generator(len(self.timestamps))
         a = self.amplitude(**kwargs)
-        f = self.frequency(**kwargs)
+        w = self.frequency(**kwargs) * 2.0 * np.pi
         o = self.offset(**kwargs)
-        p = self.phase(**kwargs)
+        p = self.phase(**kwargs) * 2.0 * np.pi
+        self._wp = WaveProps(a, w, o, p)
+        self._sample = None
+        self._inputs = None
 
-        self._sample = a * np.sin(2.0 * np.pi * (f * t - p)) + o + n
-        self.timestamps = t
-        self.noise = n
-        # return self._sample
+    @property
+    def inputs(self):
+        if self._inputs is None:
+            self._inputs = np.zeros((len(self.timestamps), len(self.features)))
+            for i, feat in enumerate(self.features):
+                if feat in ('x', 'd0xdt0'):
+                    feature = self.d0xdt0()
+                elif feat in ('dxdt', 'd1xdt1'):
+                    feature = self.d1xdt1()
+                elif feat == 'd2xdt2':
+                    feature = self.d2xdt2()
+                elif feat == 'd3xdt3':
+                    feature = self.d3xdt3()
+                elif feat == 'time':
+                    feature = self.timestamps
+                else:
+                    raise ValueError(f'Unknown feature {feat}')
+                self._inputs[:, i] = feature
+        return self._inputs
+
+    def d0xdt0(self):
+        a, w, o, p = self._wp
+        return a * np.sin(w * self.timestamps - p) + o + self.noise
+
+    def d1xdt1(self):
+        a, w, o, p = self._wp
+        return a * w * np.cos(w * self.timestamps - p)
+
+    def d2xdt2(self):
+        a, w, o, p = self._wp
+        return -1 * a * w ** 2 * np.sin(w * self.timestamps - p)
+
+    def d3xdt3(self):
+        a, w, o, p = self._wp
+        return -1 * a * w ** 3 * np.cos(w * self.timestamps - p)
 
     def __repr__(self):
         return f'Wave(amplitude={self.amplitude}, frequency={self.frequency}, offset={self.offset}, phase={self.phase})'
