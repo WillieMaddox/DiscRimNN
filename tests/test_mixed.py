@@ -64,12 +64,8 @@ def test_create_from_3_waves_0_noise():
     # TODO: test separately for statefullness
     # assert len(X) % batch_size == 0
     # assert len(y) % batch_size == 0
-    # assert len(msig.X) % batch_size == 0
-    # assert len(msig.y) % batch_size == 0
-    assert np.all(msig.X == X)
-    assert np.all(msig.y == y)
-    assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert msig.y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -128,12 +124,8 @@ def test_create_from_2_waves_1_noise():
     # TODO: test separately for statefullness
     # assert len(X) % batch_size == 0
     # assert len(y) % batch_size == 0
-    # assert len(msig.X) % batch_size == 0
-    # assert len(msig.y) % batch_size == 0
-    assert np.all(msig.X == X)
-    assert np.all(msig.y == y)
-    assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert msig.y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -193,12 +185,8 @@ def test_create_from_1_waves_2_noise():
     # TODO: test separately for statefullness
     # assert len(X) % batch_size == 0
     # assert len(y) % batch_size == 0
-    # assert len(msig.X) % batch_size == 0
-    # assert len(msig.y) % batch_size == 0
-    assert np.all(msig.X == X)
-    assert np.all(msig.y == y)
-    assert msig.X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert msig.y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
+    assert y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -329,15 +317,13 @@ def test_generate_boxcar():
 
     assert len(X) % batch_size == 0
     assert len(y) % batch_size == 0
-    assert np.all(msig.X == X)
-    assert np.all(msig.y == y)
 
     if window_size < 1 or window_size > n_timestamps:
         window_size = n_timestamps
 
     assert msig.n_timestamps % window_size == 0
-    assert msig.X.shape == (msig.n_timestamps // window_size, window_size, 1)
-    assert msig.y.shape == (msig.n_timestamps // window_size, len(sigs_coeffs))
+    assert X.shape == (msig.n_timestamps // window_size, window_size, 1)
+    assert y.shape == (msig.n_timestamps // window_size, len(sigs_coeffs))
 
     sequence_codes = {
         't_t': {

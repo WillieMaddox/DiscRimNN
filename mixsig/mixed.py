@@ -29,8 +29,6 @@ class MixedSignal:
         self.group_index = 0
         self.group_indices = None
         self.n_groups = n_groups
-        self.X = None
-        self.y = None
 
         if stateful:
             assert batch_size > 0
@@ -281,14 +279,13 @@ class MixedSignal:
         # random , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
 
         if self.window_type == 'sliding':
-            self.X, self.y = self.generate_sliding()
+            return self.generate_sliding()
         elif self.window_type == 'boxcar':
-            self.X, self.y = self.generate_boxcar()
+            return self.generate_boxcar()
         elif self.window_type == 'random':
-            self.X, self.y = self.generate_sliding()
+            return self.generate_sliding()
         else:
             raise ValueError('Invalid window_type: {}. Use "sliding", "boxcar" or "random"')
-        return self.X, self.y
 
     def generate_sliding(self, sequence_code=None):
 
@@ -461,10 +458,10 @@ class MixedSignal:
     # def next(self):
     #     # with self.lock:
     #     if self.group_index == 0:
-    #         self.X, self.y, self.group_indices, n = self.generate_group(self.n_groups)
-    #     self.group_index = (self.group_index + 1) % (len(self.X) // self.batch_size)
+    #         X, y, self.group_indices, n = self.generate_group(self.n_groups)
+    #     self.group_index = (self.group_index + 1) % (len(X) // self.batch_size)
     #     idx = self.group_indices[self.group_index * self.batch_size:(self.group_index + 1) * self.batch_size]
-    #     return self.X[idx], self.y[idx]
+    #     return X[idx], y[idx]
 
     def save_config(self):
         os.makedirs(self.out_dir, exist_ok=True)
