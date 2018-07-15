@@ -112,26 +112,25 @@ class Wave:
                  color=None,
                  name=None):
 
-        self._sample = None
         self.timestamps = None
 
         self._timestamp_generator = timesequence_generator(**time) if time is not None else lambda: None
         self.is_independent = time is not None
 
-        amplitude = {} if amplitude is None else amplitude
+        amplitude = amplitude or {}
         self.amplitude = Amplitude(**amplitude)
 
-        frequency = {} if frequency is None else frequency
+        frequency = frequency or {}
         self.frequency = Frequency(**frequency)
 
-        offset = {} if offset is None else offset
+        offset = offset or {}
         self.offset = Offset(**offset)
 
-        phase = {} if phase is None else phase
+        phase = phase or {}
         self.phase = Phase(**phase)
 
         self.noise = None
-        noise = {} if noise is None else noise
+        noise = noise or {}
         if 'uniform' in noise:
             self._noise_generator = uniform_noise_generator(**noise['uniform'])
         elif 'normal' in noise:
@@ -139,9 +138,10 @@ class Wave:
         else:
             self._noise_generator = lambda *args, **kwargs: 0
 
-        self.color = color_generator() if color is None else color
-        self.name = name_generator() if name is None else name
+        self.color = color or color_generator()
+        self.name = name or name_generator()
 
+        self._sample = None
     @property
     def sample(self):
         return self._sample

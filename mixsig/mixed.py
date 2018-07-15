@@ -49,9 +49,11 @@ class MixedSignal:
         assert self.window_type in ('sliding', 'boxcar', 'random')
 
         self.network_type = network_type
+        assert self.network_type in ('MLP', 'RNN', 'LSTM', 'PLSTM', 'TCN')
+
         self.sequence_code = sequence_code
         self._sequence_type = None
-        assert self.network_type in ('MLP', 'RNN', 'LSTM', 'PLSTM', 'TCN')
+
         assert self.sequence_code in ('t_t', 't_tc', 't1_tc', 'xw_xc', 'xw1_xc', 'xw_xwc', 'xw1_xwc')
 
         if 'time' in msig_coeffs:
