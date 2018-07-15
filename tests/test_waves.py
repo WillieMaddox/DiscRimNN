@@ -103,19 +103,6 @@ def test_wave_mean():
     assert wave.noise == 0
 
 
-def test_wave_called_directly():
-    sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
-    ts = sequence_generator()
-    params = {
-        'amplitude': {'mean': 2},
-        'frequency': {'mean': 2},
-    }
-    wave = Wave(**params)
-    w0 = wave(ts)
-    assert np.all(w0 == wave(ts))
-    assert len(w0) == len(ts)
-
-
 def test_wave_with_delayed_size():
     sequence_generator = timesequence_generator(t_min=0.0, t_max=50.0, n_max=201)
     ts = sequence_generator()

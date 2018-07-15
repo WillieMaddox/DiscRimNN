@@ -153,11 +153,6 @@ class Wave:
     def __len__(self):
         return len(self.timestamps)
 
-    def __call__(self, timestamps):
-        if self.sample is None:
-            self.generate(timestamps)
-        return self.sample
-
     # @property
     # def timestamps(self):
     #     return self._timestamps()
