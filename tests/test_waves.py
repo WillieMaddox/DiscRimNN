@@ -16,6 +16,7 @@ from mixsig.waves import Frequency
 from mixsig.waves import Offset
 from mixsig.waves import Phase
 from mixsig.waves import Wave
+from mixsig.waves import MixedWave
 
 wavepropertyold = st.builds(
     WavePropertyOld,
@@ -378,3 +379,33 @@ def test_wave_raises_invalid_feature():
         wave = Wave(*features, **params)
         wave.generate(ts)
         _ = wave.inputs
+
+
+@pytest.mark.parametrize('n_classes', [1, 2, 3], ids=repr)
+@pytest.mark.parametrize('n_features', [1, 2, 3], ids=repr)
+def test_mixedwave_with_3_feature_1_class(n_features, n_classes):
+    n_timestamps = 301
+    features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
+    waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
+    mwave_coeffs = {'time': {'t_min': 0, 't_max': 75, 'n_timestamps': n_timestamps}}
+
+    mwave = MixedWave(
+        waves_coeffs,
+        msig_coeffs=mwave_coeffs,
+        features=features,
+    )
+
+    assert len(mwave.waves) == len(waves_coeffs)
+    mwave.generate()
+    assert mwave.labels.shape == (n_timestamps,)
+    assert mwave.one_hots.shape == (n_timestamps, n_classes)
+    assert mwave.signals.shape == (n_classes, n_timestamps)
+    assert mwave.mixed_signal.shape == (n_timestamps, )
+    assert mwave.inputs.shape == (n_classes, n_timestamps, n_features)
+    assert mwave.mixed_inputs.shape == (n_timestamps, n_features)
+
+    i_timestamp = np.random.randint(n_timestamps)
+    i_label = mwave.labels[i_timestamp]
+    assert mwave.one_hots[i_timestamp][i_label] == 1
+    assert mwave.mixed_signal[i_timestamp] == mwave.signals[i_label, i_timestamp]
+    assert np.all(mwave.mixed_inputs[i_timestamp] == mwave.inputs[i_label, i_timestamp])

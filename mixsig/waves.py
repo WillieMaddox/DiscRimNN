@@ -7,6 +7,8 @@ from .utils import color_generator
 from .utils import normal_noise_generator
 from .utils import uniform_noise_generator
 from .utils import timesequence_generator
+from .utils import create_label_distribution
+from .utils import create_one_hots_from_labels
 
 WaveProps = namedtuple('WaveProps', 'a w o p')
 
@@ -367,3 +369,79 @@ class Wave:
 
     def __repr__(self):
         return f'Wave(amplitude={self.amplitude}, frequency={self.frequency}, offset={self.offset}, phase={self.phase})'
+
+
+class MixedWave:
+    def __init__(self,
+                 sigs_coeffs,
+                 msig_coeffs=None,
+                 features=('x',),
+                 name='Mixed'):
+
+        self.name = name
+        self.labels = None
+        self.one_hots = None
+        self.signals = None
+        self.mixed_signal = None
+        self.inputs = None
+        self.mixed_inputs = None
+        self.timestamps = None
+        self.n_timestamps = None
+
+        if 'time' in msig_coeffs:
+            self.sequence_generator = timesequence_generator(**msig_coeffs['time'])
+
+        mixed_signal_prop_defaults = {
+            'amplitude': {'mean': 1, 'delta': 0},
+            'frequency': {'mean': 1, 'delta': 0},
+            'offset': {'mean': 0, 'delta': 0},
+            'phase': {'mean': 0, 'delta': 0},
+        }
+        self.mixed_signal_props = {}
+        for prop_name, default_coeffs in mixed_signal_prop_defaults.items():
+            coeffs = msig_coeffs[prop_name] if prop_name in msig_coeffs else default_coeffs
+            if prop_name == 'amplitude':
+                self.mixed_signal_props[prop_name] = Amplitude(**coeffs)
+            elif prop_name == 'frequency':
+                self.mixed_signal_props[prop_name] = Frequency(**coeffs)
+            elif prop_name == 'offset':
+                self.mixed_signal_props[prop_name] = Offset(**coeffs)
+            elif prop_name == 'phase':
+                self.mixed_signal_props[prop_name] = Phase(**coeffs)
+
+        self.features = features
+        self.n_features = len(self.features)
+
+        self.waves = [Wave(*features, **coeffs) for coeffs in sigs_coeffs]
+        self.n_classes = len(self.waves)
+
+    def generate(self):
+        """ Generate waves from property values."""
+        # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
+        # generate new timestamps
+        self.timestamps = self.sequence_generator()
+        self.n_timestamps = len(self.timestamps)
+        # generate new mixed signal properties.
+        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
+
+        # generate new individual waves.
+        for wave in self.waves:
+            wave.generate(self.timestamps, **props)
+
+        # create a uniform distribution of class labels -> np.array([2,1,3, ... ,1])
+        # (500,), (t,), (n_timestamps,)
+        self.labels = create_label_distribution(self.n_timestamps, self.n_classes)
+
+        # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
+        # (500, 4), (t, c), (n_timestamps, n_classes)
+        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
+
+        # (4, 500), (c, t), (n_classes, n_timestamps)
+        self.signals = np.vstack([wave.sample for wave in self.waves if not wave.is_independent])
+        # (500,), (t,), (n_timestamps,)
+        self.mixed_signal = np.sum(self.one_hots.T * self.signals, axis=0)
+
+        # (4, 500, 2), (c, t, f), (n_classes, n_timestamps, n_features)
+        self.inputs = np.stack([wave.inputs for wave in self.waves if not wave.is_independent])
+        # (500, 2), (t, f), (n_timestamps, n_features)
+        self.mixed_inputs = np.sum(self.one_hots.T[..., None] * self.inputs, axis=0)
