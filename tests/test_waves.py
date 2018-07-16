@@ -387,7 +387,7 @@ def test_mixedwave_with_3_feature_1_class(n_features, n_classes):
     n_timestamps = 301
     features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
     waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
-    mwave_coeffs = {'time': {'t_min': 0, 't_max': 75, 'n_timestamps': n_timestamps}}
+    mwave_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
 
     mwave = MixedWave(
         waves_coeffs,

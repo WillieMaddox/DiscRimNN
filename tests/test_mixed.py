@@ -43,22 +43,19 @@ def test_create_from_3_waves_0_noise():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
-    batch_size = 64
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        batch_size=batch_size,
         window_size=window_size,
         window_type='sliding',
         sequence_code='xw1_xc',
         run_label='test'
     )
 
-    # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     # TODO: test separately for statefullness
@@ -80,7 +77,7 @@ def test_create_from_2_waves_1_noise():
         'name': 'A',
     }
     wave2_coeffs = {
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -103,22 +100,19 @@ def test_create_from_2_waves_1_noise():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
-    batch_size = 16
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        batch_size=batch_size,
         window_size=window_size,
         window_type='sliding',
         sequence_code='xw1_xc',
         run_label='test'
     )
 
-    # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     # TODO: test separately for statefullness
@@ -140,7 +134,7 @@ def test_create_from_1_waves_2_noise():
         'name': 'A',
     }
     wave2_coeffs = {
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.0, 'delta': 0},
@@ -149,7 +143,7 @@ def test_create_from_1_waves_2_noise():
         'name': 'B',
     }
     wave3_coeffs = {
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.2},
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.2},
         'amplitude': {'mean': 1.0, 'delta': 0},
         'frequency': {'mean': 1, 'delta': 0},
         'offset': {'mean': 0.1, 'delta': 0},
@@ -164,22 +158,19 @@ def test_create_from_1_waves_2_noise():
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
-    batch_size = 128
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        batch_size=batch_size,
         window_size=window_size,
         window_type='sliding',
         sequence_code='xw1_xc',
         run_label='test'
     )
 
-    # msig.save_config()
     assert len(msig.waves) == len(sigs_coeffs)
     X, y = msig.generate()
     # TODO: test separately for statefullness
@@ -226,7 +217,6 @@ def test_generate_sliding():
     wave3_coeffs = {'offset': {'mean': 0.1}}
     sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
-    batch_size = 1
     window_size = 0
     n_timestamps = 500
 
@@ -235,7 +225,6 @@ def test_generate_sliding():
     msig = MixedSignal(
         sigs_coeffs,
         msig_coeffs=msig_coeffs,
-        batch_size=batch_size,
         window_size=window_size,
         window_type='sliding',
         sequence_code='xw1_xwc',
@@ -249,8 +238,6 @@ def test_generate_sliding():
     n_classes = msig.n_classes
     # code_map = {'x': n_samples, 'w': window_size, 't': n_timestamps, 'c': n_classes}
     assert msig.n_classes == len(msig.waves) == len(sigs_coeffs)
-    assert len(X) % batch_size == 0
-    assert len(y) % batch_size == 0
 
     if window_size < 1 or window_size > n_timestamps:
         window_size = n_timestamps
@@ -305,7 +292,6 @@ def test_generate_boxcar():
         sequence_code='xw1_xc',
         run_label='test'
     )
-    # msig.save_config()
     X, y = msig.generate()
     n_timestamps = msig.n_timestamps
     n_labels = len(msig.labels)
@@ -350,7 +336,6 @@ def test_generate_boxcar():
         X, y = msig.generate_boxcar(sequence_code)
         assert X.shape == shapes['x'], print(sequence_code)
         assert y.shape == shapes['y'], print(sequence_code)
-
 
 
 @fixture
@@ -399,19 +384,19 @@ def test_generate_config(datadir):
         'name': 'C',
         'color': '#0000ff'
     }
-    sig_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
     msig_coeffs = {
         'amplitude': {'mean': 10, 'delta': 2},
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
         'phase': {'mean': 0, 'delta': 1},
-        'time': {'t_min': 0, 't_max': 75, 'n_timestamps': 301}
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
     window_size = 10
     msig = MixedSignal(
-        sig_coeffs,
+        sigs_coeffs,
         msig_coeffs=msig_coeffs,
         window_size=window_size,
         window_type='sliding',
