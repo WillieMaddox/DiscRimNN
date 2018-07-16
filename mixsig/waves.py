@@ -302,10 +302,13 @@ class Wave:
         self.name = name or name_generator()
 
         self.features = features or ('x',)
-
         self._wp = None
         self._sample = None
         self._inputs = None
+
+    @property
+    def n_classes(self):
+        return 1
 
     @property
     def sample(self):
