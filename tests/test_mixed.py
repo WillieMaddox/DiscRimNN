@@ -5,10 +5,68 @@ from distutils.dir_util import copy_tree
 from pytest import fixture
 import numpy as np
 from mixsig.mixed import MixedSignal
-
+from mixsig.utils import bits2shape
 # class TestMixedSignal:
 #     def test___init__(self):
 #         msig = MixedSignal()
+
+
+def test_create_from_1_input_1_output():
+    n_timestamps = 301
+    features = ('x',)
+    n_features = len(features)
+    window_size = 10
+    waves_coeffs = [{'name': 'A'}]
+
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}
+    }
+
+    sigs_coeffs = [mwave_coeffs]
+
+    n_classes = 1
+    msig = MixedSignal(
+        sigs_coeffs,
+        window_size=window_size,
+        window_type='sliding',
+        features=features,
+        run_label='test'
+    )
+
+    assert msig.n_classes == n_classes
+    X, y = msig.generate()
+    assert X.shape == (msig.n_timestamps - window_size + 1, window_size, n_features)
+    assert y.shape == (msig.n_timestamps - window_size + 1, n_classes)
+
+
+def test_create_from_2_input_1_output():
+    n_timestamps = 301
+    features = ('x', 'dxdt')
+    n_features = len(features)
+    window_size = 10
+    waves_coeffs = [{'name': 'A'}]
+
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}
+    }
+
+    sigs_coeffs = [mwave_coeffs]
+
+    n_classes = 1
+    msig = MixedSignal(
+        sigs_coeffs,
+        window_size=window_size,
+        window_type='sliding',
+        features=features,
+        run_label='test'
+    )
+
+    assert msig.n_classes == n_classes
+    X, y = msig.generate()
+    assert X.shape == (msig.n_timestamps - window_size + 1, window_size, n_features)
+    assert y.shape == (msig.n_timestamps - window_size + 1, n_classes)
 
 
 def test_create_from_3_waves_0_noise():
@@ -36,9 +94,10 @@ def test_create_from_3_waves_0_noise():
         'color': '#0000ff',
         'name': 'C',
     }
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    waves_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
-    msig_coeffs = {
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
         'amplitude': {'mean': 10, 'delta': 2},
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
@@ -46,23 +105,21 @@ def test_create_from_3_waves_0_noise():
         'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
+    sigs_coeffs = [mwave_coeffs]
+
+    n_classes = 3
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
-        msig_coeffs=msig_coeffs,
         window_size=window_size,
         window_type='sliding',
-        sequence_code='xw1_xc',
         run_label='test'
     )
 
-    assert len(msig.waves) == len(sigs_coeffs)
+    assert msig.n_classes == n_classes
     X, y = msig.generate()
-    # TODO: test separately for statefullness
-    # assert len(X) % batch_size == 0
-    # assert len(y) % batch_size == 0
     assert X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert y.shape == (msig.n_timestamps - window_size + 1, n_classes)
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -93,9 +150,10 @@ def test_create_from_2_waves_1_noise():
         'color': '#0000ff',
         'name': 'C',
     }
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    waves_coeffs = [wave1_coeffs, wave3_coeffs]
 
-    msig_coeffs = {
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
         'amplitude': {'mean': 10, 'delta': 2},
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
@@ -103,23 +161,21 @@ def test_create_from_2_waves_1_noise():
         'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
+    sigs_coeffs = [mwave_coeffs, wave2_coeffs]
+
+    n_classes = 3
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
-        msig_coeffs=msig_coeffs,
         window_size=window_size,
         window_type='sliding',
-        sequence_code='xw1_xc',
         run_label='test'
     )
 
-    assert len(msig.waves) == len(sigs_coeffs)
+    assert msig.n_classes == n_classes
     X, y = msig.generate()
-    # TODO: test separately for statefullness
-    # assert len(X) % batch_size == 0
-    # assert len(y) % batch_size == 0
     assert X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert y.shape == (msig.n_timestamps - window_size + 1, n_classes)
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -151,9 +207,10 @@ def test_create_from_1_waves_2_noise():
         'color': '#0000ff',
         'name': 'C',
     }
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    waves_coeffs = [wave1_coeffs]
 
-    msig_coeffs = {
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
         'amplitude': {'mean': 10, 'delta': 2},
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
@@ -161,23 +218,21 @@ def test_create_from_1_waves_2_noise():
         'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
+    sigs_coeffs = [mwave_coeffs, wave2_coeffs, wave3_coeffs]
+
+    n_classes = 3
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
-        msig_coeffs=msig_coeffs,
         window_size=window_size,
         window_type='sliding',
-        sequence_code='xw1_xc',
         run_label='test'
     )
 
-    assert len(msig.waves) == len(sigs_coeffs)
+    assert msig.n_classes == n_classes
     X, y = msig.generate()
-    # TODO: test separately for statefullness
-    # assert len(X) % batch_size == 0
-    # assert len(y) % batch_size == 0
     assert X.shape == (msig.n_timestamps - window_size + 1, window_size, 1)
-    assert y.shape == (msig.n_timestamps - window_size + 1, len(sigs_coeffs))
+    assert y.shape == (msig.n_timestamps - window_size + 1, n_classes)
     assert np.all([sig.name for sig in msig.waves] == ['A', 'B', 'C'])
     assert np.all([sig.color for sig in msig.waves] == ['#ff0000', '#00ff00', '#0000ff'])
 
@@ -191,123 +246,238 @@ def test_invalid_window_type():
         )
 
 
-def test_invalid_sequence_code1():
-    with pytest.raises(AssertionError):
-        MixedSignal(
-            [{'offset': {'mean': -0.1}}],
-            window_type='sliding',
-            sequence_code='xwh_xwc',
-            run_label='test'
-        )
-
-
-def test_invalid_sequence_code2():
-    with pytest.raises(AssertionError):
-        MixedSignal(
-            [{'offset': {'mean': -0.1}}],
-            window_type='sliding',
-            sequence_code='xw1_xwg',
-            run_label='test'
-        )
-
-
-def test_generate_sliding():
+@pytest.mark.parametrize('oc', [
+    't', 't1', 'tc', '1t', 't11', 't1c', '1t1', '1tc',
+    #'w','w1', 'wc', '1w',               '1w1', '1wc',
+    'x', 'x1', 'xc', 'xw', 'x11', 'x1c', 'xw1', 'xwc',
+], ids=repr)
+@pytest.mark.parametrize('ic', [
+    't', 't1', 'tf', '1t', 't11', 't1f', '1t1', '1tf',
+    #'w','w1', 'wf', '1w',               '1w1', '1wf',
+    'x', 'x1', 'xf', 'xw', 'x11', 'x1f', 'xw1', 'xwf',
+], ids=repr)
+def test_generate_sliding(ic, oc):
     wave1_coeffs = {'offset': {'mean': -0.1}}
     wave2_coeffs = {'offset': {'mean': 0.0}}
-    wave3_coeffs = {'offset': {'mean': 0.1}}
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    wave3_coeffs = {
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301, 'noise_type': 'pareto', 'pareto_shape': 1.5},
+        'offset': {'mean': 0.1}
+    }
+    waves_coeffs = [wave1_coeffs, wave2_coeffs]
 
+    n_classes = 3
+    features = ('x', 'dxdt')
     window_size = 0
     n_timestamps = 500
 
-    msig_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+
+    sigs_coeffs = [mwave_coeffs, wave3_coeffs]
 
     msig = MixedSignal(
         sigs_coeffs,
-        msig_coeffs=msig_coeffs,
         window_size=window_size,
         window_type='sliding',
-        sequence_code='xw1_xwc',
+        features=features,
         run_label='test'
     )
 
     X, y = msig.generate()
+    assert msig.n_classes == n_classes
     n_timestamps = msig.n_timestamps
-    n_labels = len(msig.labels)
     n_samples = msig.n_samples
     n_classes = msig.n_classes
-    # code_map = {'x': n_samples, 'w': window_size, 't': n_timestamps, 'c': n_classes}
-    assert msig.n_classes == len(msig.waves) == len(sigs_coeffs)
+    n_features = len(features)
 
     if window_size < 1 or window_size > n_timestamps:
         window_size = n_timestamps
 
-    sequence_codes = {
-        't_t': {
-            'x': (n_timestamps, ),
-            'y': (n_labels, )},
-        't_tc': {
-            'x': (n_timestamps, ),
-            'y': (n_timestamps, n_classes)},
-        't1_tc': {
-            'x': (n_timestamps, 1),
-            'y': (n_timestamps, n_classes)},
-        'xw_xc': {
-            'x': (n_samples, window_size),
-            'y': (n_samples, n_classes)},
-        'xw1_xc': {
-            'x': (n_samples, window_size, 1),
-            'y': (n_samples, n_classes)},
-        'xw_xwc': {
-            'x': (n_samples, window_size),
-            'y': (n_samples, window_size, n_classes)},
-        'xw1_xwc': {
-            'x': (n_samples, window_size, 1),
-            'y': (n_samples, window_size, n_classes)}}
+    seq_bits = {
+        '1': 1,
+        't': n_timestamps,
+        'x': n_samples,
+        'w': window_size,
+        'f': n_features,
+        'c': n_classes,
+    }
 
-    for sequence_code, shapes in sequence_codes.items():
-        X, y = msig.generate_sliding(sequence_code)
-        assert X.shape == shapes['x'], print(sequence_code)
-        assert y.shape == shapes['y'], print(sequence_code)
+    in_shape = bits2shape(ic, seq_bits)
+    out_shape = bits2shape(oc, seq_bits)
+    sequence_code = '_'.join([ic, oc])
+    X, y = msig.generate_sliding(sequence_code)
+    assert X.shape == in_shape, print(sequence_code)
+    assert y.shape == out_shape, print(sequence_code)
+
+
+@pytest.mark.parametrize('n_classes', [2, 3], ids=repr)
+@pytest.mark.parametrize('n_features', [1, 2], ids=repr)
+@pytest.mark.parametrize('sequence_type', ['one2many', 'many2one', 'many2many'], ids=repr)
+def test_generate_sliding_window_size_is_1(sequence_type, n_features, n_classes):
+    n_timestamps = 301
+    features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
+    waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
+
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+
+    sigs_coeffs = [mwave_coeffs]
+
+    with pytest.raises(ValueError):
+        MixedSignal(
+            sigs_coeffs,
+            features=features,
+            window_size=1,
+            window_type='sliding',
+            sequence_type=sequence_type,
+            run_label='test'
+        )
+
+
+@pytest.mark.parametrize('n_classes', [2, 3], ids=repr)
+@pytest.mark.parametrize('n_features', [1, 2], ids=repr)
+@pytest.mark.parametrize('window_size', [0, 1, 5], ids=repr)
+def test_generate_sliding_one2one(window_size, n_features, n_classes):
+    sequence_type = 'one2one'
+    n_timestamps = 301
+    features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
+    waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
+
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+
+    sigs_coeffs = [mwave_coeffs]
+
+    msig = MixedSignal(
+        sigs_coeffs,
+        features=features,
+        window_size=window_size,
+        window_type='sliding',
+        sequence_type=sequence_type,
+        run_label='test'
+    )
+
+    if window_size < 1 or window_size > n_timestamps:
+        window_size = n_timestamps
+
+    n_samples = n_timestamps - window_size + 1
+
+    X, y = msig.generate()
+    assert msig.sequence_type == sequence_type
+    assert msig.window_size == window_size
+    assert msig.n_features == n_features
+    assert msig.n_classes == n_classes
+
+    seq_bits = {
+        '1': 1,
+        't': n_timestamps,
+        'x': n_samples,
+        'w': window_size,
+        'f': n_features,
+        'c': n_classes,
+    }
+
+    ic, oc = msig.sequence_code.split('_')
+    in_shape = bits2shape(ic, seq_bits)
+    out_shape = bits2shape(oc, seq_bits)
+    assert X.shape == in_shape, print(msig.sequence_code)
+    assert y.shape == out_shape, print(msig.sequence_code)
+
+
+@pytest.mark.parametrize('n_classes', [2, 3], ids=repr)
+@pytest.mark.parametrize('n_features', [1, 2], ids=repr)
+@pytest.mark.parametrize('window_size', [0, 5], ids=repr)
+@pytest.mark.parametrize('sequence_type', ['one2many', 'many2one', 'many2many'], ids=repr)
+def test_generate_sliding_not_one2one(sequence_type, window_size, n_features, n_classes):
+    n_timestamps = 301
+    features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
+    waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
+
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+
+    sigs_coeffs = [mwave_coeffs]
+
+    msig = MixedSignal(
+        sigs_coeffs,
+        features=features,
+        window_size=window_size,
+        window_type='sliding',
+        sequence_type=sequence_type,
+        run_label='test'
+    )
+
+    if window_size < 1 or window_size > n_timestamps:
+        window_size = n_timestamps
+
+    n_samples = n_timestamps - window_size + 1
+
+    X, y = msig.generate()
+    assert msig.sequence_type == sequence_type
+    assert msig.window_size == window_size
+    assert msig.n_features == n_features
+    assert msig.n_classes == n_classes
+
+    seq_bits = {
+        '1': 1,
+        't': n_timestamps,
+        'x': n_samples,
+        'w': window_size,
+        'f': n_features,
+        'c': n_classes,
+    }
+
+    ic, oc = msig.sequence_code.split('_')
+    in_shape = bits2shape(ic, seq_bits)
+    out_shape = bits2shape(oc, seq_bits)
+    assert X.shape == in_shape, print(msig.sequence_code)
+    assert y.shape == out_shape, print(msig.sequence_code)
 
 
 def test_generate_boxcar():
     wave1_coeffs = {'offset': {'mean': -0.1}}
     wave2_coeffs = {'offset': {'mean': 0.0}}
     wave3_coeffs = {'offset': {'mean': 0.1}}
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    waves_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
+    n_classes = 3
     batch_size = 1
     window_size = 0
     n_timestamps = 500
 
-    msig_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+
+    sigs_coeffs = [mwave_coeffs]
 
     msig = MixedSignal(
         sigs_coeffs,
-        msig_coeffs=msig_coeffs,
         batch_size=batch_size,
         window_size=window_size,
         window_type='boxcar',
-        sequence_code='xw1_xc',
         run_label='test'
     )
     X, y = msig.generate()
+    assert msig.n_classes == n_classes
+    # TODO: test separately for statefullness
+    # assert len(X) % batch_size == 0
+    # assert len(y) % batch_size == 0
     n_timestamps = msig.n_timestamps
     n_labels = len(msig.labels)
     n_samples = msig.n_samples
     n_classes = msig.n_classes
-    assert msig.n_classes == len(msig.waves) == len(sigs_coeffs)
-
-    assert len(X) % batch_size == 0
-    assert len(y) % batch_size == 0
 
     if window_size < 1 or window_size > n_timestamps:
         window_size = n_timestamps
 
     assert msig.n_timestamps % window_size == 0
     assert X.shape == (msig.n_timestamps // window_size, window_size, 1)
-    assert y.shape == (msig.n_timestamps // window_size, len(sigs_coeffs))
+    assert y.shape == (msig.n_timestamps // window_size, n_classes)
 
     sequence_codes = {
         't_t': {
@@ -384,9 +554,10 @@ def test_generate_config(datadir):
         'name': 'C',
         'color': '#0000ff'
     }
-    sigs_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
+    waves_coeffs = [wave1_coeffs, wave2_coeffs, wave3_coeffs]
 
-    msig_coeffs = {
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
         'amplitude': {'mean': 10, 'delta': 2},
         'frequency': {'mean': 25, 'delta': 0},
         'offset': {'mean': 1, 'delta': 5},
@@ -394,13 +565,13 @@ def test_generate_config(datadir):
         'time': {'t_min': 0, 't_max': 2, 'n_timestamps': 301}
     }
 
+    sigs_coeffs = [mwave_coeffs]
+
     window_size = 10
     msig = MixedSignal(
         sigs_coeffs,
-        msig_coeffs=msig_coeffs,
         window_size=window_size,
         window_type='sliding',
-        sequence_code='xw1_xc',
         run_label='test'
     )
     truth_filename = datadir('mixed_signal_config.json')

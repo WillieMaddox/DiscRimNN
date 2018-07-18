@@ -102,23 +102,8 @@ def test_waveproperty_generator_a(wp):
         assert wp1 != wp0, f'{wp.value} {wp.delta}'
 
 
-@pytest.mark.parametrize('value,delta', [
-    (5, None),
-    (5, 0.0),
-    (5, 0),
-    (5, 1),
-    (5, 1.0),
-    (5.0, None),
-    (5.0, 0.0),
-    (5.0, 0),
-    (5.0, 1),
-    (5.0, 1.0),
-    (None, None),
-    (None, 0.0),
-    (None, 0),
-    (None, 1),
-    (None, 1.0),
-], ids=repr)
+@pytest.mark.parametrize('delta', [None, 0.0, 0, 1, 1.0], ids=repr)
+@pytest.mark.parametrize('value', [5, 5.0, None], ids=repr)
 @pytest.mark.parametrize('Wp', [WaveProperty, Amplitude, Frequency, Offset, Phase], ids=repr)
 def test_waveproperty_generator_b(Wp, value, delta):
     wp = Wp(value, delta)
@@ -383,29 +368,31 @@ def test_wave_raises_invalid_feature():
 
 @pytest.mark.parametrize('n_classes', [1, 2, 3], ids=repr)
 @pytest.mark.parametrize('n_features', [1, 2, 3], ids=repr)
-def test_mixedwave_with_3_feature_1_class(n_features, n_classes):
+def test_mixedwave_features_and_classes(n_features, n_classes):
     n_timestamps = 301
     features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
     waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
-    mwave_coeffs = {'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}}
+    mwave_coeffs = {
+        'waves_coeffs': waves_coeffs,
+        'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}
+    }
 
     mwave = MixedWave(
-        waves_coeffs,
-        msig_coeffs=mwave_coeffs,
-        features=features,
+        *features,
+        mwave_coeffs=mwave_coeffs,
     )
 
     assert len(mwave.waves) == len(waves_coeffs)
     mwave.generate()
     assert mwave.labels.shape == (n_timestamps,)
     assert mwave.one_hots.shape == (n_timestamps, n_classes)
-    assert mwave.signals.shape == (n_classes, n_timestamps)
+    assert mwave.samples.shape == (n_classes, n_timestamps)
     assert mwave.mixed_signal.shape == (n_timestamps, )
-    assert mwave.inputs.shape == (n_classes, n_timestamps, n_features)
-    assert mwave.mixed_inputs.shape == (n_timestamps, n_features)
+    assert mwave.wave_inputs.shape == (n_classes, n_timestamps, n_features)
+    assert mwave.inputs.shape == (n_timestamps, n_features)
 
     i_timestamp = np.random.randint(n_timestamps)
     i_label = mwave.labels[i_timestamp]
     assert mwave.one_hots[i_timestamp][i_label] == 1
-    assert mwave.mixed_signal[i_timestamp] == mwave.signals[i_label, i_timestamp]
-    assert np.all(mwave.mixed_inputs[i_timestamp] == mwave.inputs[i_label, i_timestamp])
+    assert mwave.mixed_signal[i_timestamp] == mwave.samples[i_label, i_timestamp]
+    assert np.all(mwave.inputs[i_timestamp] == mwave.wave_inputs[i_label, i_timestamp])

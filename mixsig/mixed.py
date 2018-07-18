@@ -3,24 +3,20 @@ import json
 import numpy as np
 from .utils import get_datetime_now
 from .utils import timesequence_generator
-from .utils import create_label_distribution
 from .utils import create_one_hots_from_labels
-from .waves import Amplitude
-from .waves import Frequency
-from .waves import Offset
-from .waves import Phase
 from .waves import Wave
+from .waves import MixedWave
 
 
 class MixedSignal:
     def __init__(self,
                  sigs_coeffs,
-                 msig_coeffs=None,
+                 features=None,
                  batch_size=1,
                  window_size=0,
                  window_type='sliding',
                  network_type='RNN',
-                 sequence_code='t_tc',
+                 sequence_type='many2one',
                  stateful=False,
                  run_label=None,
                  n_groups=5,
@@ -30,6 +26,9 @@ class MixedSignal:
         self.group_indices = None
         self.n_groups = n_groups
 
+        self.features = features or ('x',)
+        self.n_features = len(self.features)
+
         if stateful:
             assert batch_size > 0
         self.stateful = stateful
@@ -37,6 +36,7 @@ class MixedSignal:
 
         # Should these be properties?
         self.name = name
+        self.inputs = None
         self.labels = None
         self.one_hots = None
         self.mixed_signal = None
@@ -51,35 +51,26 @@ class MixedSignal:
         self.network_type = network_type
         assert self.network_type in ('MLP', 'RNN', 'LSTM', 'PLSTM', 'TCN')
 
-        self.sequence_code = sequence_code
-        self._sequence_type = None
+        self.sequence_type = sequence_type
+        self._sequence_code = None
+        assert self.sequence_type in ('one2one', 'one2many', 'many2one', 'many2many')
 
-        assert self.sequence_code in ('t_t', 't_tc', 't1_tc', 'xw_xc', 'xw1_xc', 'xw_xwc', 'xw1_xwc')
+        if 'time' in sigs_coeffs:
+            self.sequence_generator = timesequence_generator(**sigs_coeffs['time'])
 
-        if 'time' in msig_coeffs:
-            self.sequence_generator = timesequence_generator(**msig_coeffs['time'])
+        self.signals = []
+        self.n_classes = 0
+        for coeffs in sigs_coeffs:
+            if 'waves_coeffs' in coeffs:
+                signal = MixedWave(*self.features, mwave_coeffs=coeffs)
+                signal.label = np.arange(self.n_classes, self.n_classes + signal.n_classes)
+            else:
+                signal = Wave(*self.features, **coeffs)
+                signal.label = self.n_classes
+            self.n_classes += signal.n_classes
+            self.signals.append(signal)
+        # self.n_classes = sum(s.n_classes for s in self.signals)
 
-        mixed_signal_prop_defaults = {
-            'amplitude': {'mean': 1, 'delta': 0},
-            'frequency': {'mean': 1, 'delta': 0},
-            'offset': {'mean': 0, 'delta': 0},
-            'phase': {'mean': 0, 'delta': 0},
-        }
-        self.mixed_signal_props = {}
-        for prop_name, default_coeffs in mixed_signal_prop_defaults.items():
-            coeffs = msig_coeffs[prop_name] if prop_name in msig_coeffs else default_coeffs
-            if prop_name == 'amplitude':
-                self.mixed_signal_props[prop_name] = Amplitude(**coeffs)
-            elif prop_name == 'frequency':
-                self.mixed_signal_props[prop_name] = Frequency(**coeffs)
-            elif prop_name == 'offset':
-                self.mixed_signal_props[prop_name] = Offset(**coeffs)
-            elif prop_name == 'phase':
-                self.mixed_signal_props[prop_name] = Phase(**coeffs)
-
-        self.waves = [Wave(**coeffs) for coeffs in sigs_coeffs]
-
-        self.n_classes = len(self.waves)
 
         run_label = run_label or get_datetime_now(fmt='%Y_%m%d_%H%M')
 
@@ -91,7 +82,6 @@ class MixedSignal:
             'sequence_code': self.sequence_code,
             'sequence_type': self.sequence_type,
             'sigs_coeffs': sigs_coeffs,
-            'msig_coeffs': msig_coeffs,
         }
 
         # TODO: What's the appropriate way to assign the out_dir (regular functionality, unit tests, etc.)
@@ -162,70 +152,27 @@ class MixedSignal:
             self._window_size = val
             self._n_samples = None
 
-
-
-    @property
-    def sequence_type(self):
-        if self._sequence_type is None:
-            if self.sequence_code in ('t_t', 't_tc', 't1_tc'):
-                self._sequence_type = 'one2one'
-            elif self.sequence_code in ('xw_xc', 'xw1_xc'):
-                self._sequence_type = 'many2one'
-            elif self.sequence_code in ('xw_xwc', 'xw1_xwc'):
-                self._sequence_type = 'many2many'
-                if self.network_type in ('PLSTM', 'PhasedLSTM'):
-                    self._sequence_type = self._sequence_type + '+time'
-            else:
-                raise ValueError('Invalid sequence_code')
-        return self._sequence_type
-
-    def _generate_signals_old(self):
+    def generate(self):
         """ Generate waves from property values."""
-        # generate new timestamps
-        self.timestamps = self.sequence_generator()
-        # generate new values for each mixed signal property.
-        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
-        # generate new single waves.
-        self._signals = np.vstack([wave.generate(**props) for wave in self.waves])
 
-    def _generate_signals(self):
-        """ Generate waves from property values."""
-        # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
-        # generate new timestamps
-        timestamps = self.sequence_generator()
-        # generate new mixed signal properties.
-        props = {name: prop() for name, prop in self.mixed_signal_props.items()}
+        timestamps = []
+        mixed_signal = []
+        labels = []
+        inputs = []
+        for signal in self.signals:
+            signal.generate()
+            timestamps.append(signal.timestamps)
+            mixed_signal.append(signal.sample)
+            labels.append(signal.labels)
+            inputs.append(signal.inputs)
 
-        # get the class labels for the waves that will generate the mixed_signal
-        classes = np.array([c for c, wave in enumerate(self.waves) if not wave.is_independent])
-        # create a uniform distribution of class labels -> np.array([2,1,3, ... ,1])
-        labels = create_label_distribution(len(timestamps), len(classes))
-        # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
-        one_hots = create_one_hots_from_labels(labels, len(classes))
-
-        # generate new individual waves.
-        for wave in self.waves:
-            wave.generate(timestamps, **props)
-
-        signals = np.vstack([wave.sample for wave in self.waves if not wave.is_independent])
-        mixed_signal = np.sum(one_hots.T * signals, axis=0)
-
-        # make sure the labels align with the classes.
-        # TODO: refactor this.  It's confusing.
-        labels = classes[labels]
-
-        # Now append the remaining independent waves to the end of the mixed_signal.
-        for c, wave in enumerate(self.waves):
-            if wave.is_independent:
-                timestamps = np.append(timestamps, wave.timestamps)
-                mixed_signal = np.append(mixed_signal, wave.sample)
-                labels = np.append(labels, np.zeros(len(wave), dtype=int) + c)
+        timestamps = np.hstack(timestamps)
+        mixed_signal = np.hstack(mixed_signal)
+        labels = np.hstack(labels)
+        inputs = np.vstack(inputs)
 
         # Sanity check
-        assert len(timestamps) == len(mixed_signal) == len(labels)
-
-        # Store the indices to the ordered timestamps.
-        # sorted_indices = np.argsort(timestamps)
+        assert len(timestamps) == len(mixed_signal) == len(labels) == len(inputs)
 
         batch_size = self.batch_size if self.stateful else 1
         window_size = self.window_size if self.window_size is not None else 1
@@ -242,6 +189,7 @@ class MixedSignal:
 
         self.mixed_signal = mixed_signal[sorted_indices]
         self.labels = labels[sorted_indices]
+        self.inputs = inputs[sorted_indices]
         self.timestamps = timestamps[sorted_indices]
         self.n_timestamps = len(self.timestamps)
         self.t_min = self.timestamps[0]
@@ -249,11 +197,8 @@ class MixedSignal:
         if self._window_size is None:
             self.window_size = self.n_timestamps
 
-        # assert self.n_samples % self.batch_size == 0
-
-    def generate(self):
-        self._generate_signals()
         self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
+
         # window_type, window_size
 
         # sliding, ws < 0                ->  raise ValueError('window_size must be non negative')
@@ -289,21 +234,226 @@ class MixedSignal:
         else:
             raise ValueError('Invalid window_type: {}. Use "sliding", "boxcar" or "random"')
 
-    def generate_sliding(self, sequence_code=None):
+    @property
+    def sequence_code(self):
 
         # TODO: unit tests to make sure all these pathways are correct.
         # sequence_types
         # t -> n_[t]imestamps
         # x -> n_samples (or number of sub-samples)
         # w -> [w]indow_size
+        # f -> n_[f]eatures
         # c -> n_[c]lasses
-        # one2one   t_t     (1200,)        (1200,)
-        # one2one   t_tc    (1200,)        (1200, 3)
-        # one2one   t1_tc   (1200, 1)      (1200, 3)
-        # many2one  xw_xc   (1088, 100)    (1088, 3)
-        # many2one  xw1_xc  (1088, 100, 1) (1088, 3)
-        # many2many xw_xwc  (1088, 100)    (1088, 100, 3)
-        # many2many xw1_xwc (1088, 100, 1) (1088, 100, 3)
+
+        # shape[0] -> number of sequences, number of samples
+        # shape[1] -> number of timesteps, sample length, sequence length, window_size
+        # shape[2] -> number of features (input), number of classes (output)
+
+        # (01tx, 01tw, 01fc)
+
+        # examples:
+        # t = 8
+        # x = 6 (sliding), x = 4 (boxcar)
+        # w = 3 (sliding), w = 2 (boxcar)
+        # f = 9
+        # c = 5
+
+        #  one2one    t00_t00  (8,     )  (8,     )
+        #  one2one    t01_t00  (8,    1)  (8,     )
+        #  one2one    t0f_t00  (8,    9)  (8,     )
+        #  one2one    t10_t00  (8  1,  )  (8,     )
+        #  one2one    t11_t00  (8, 1, 1)  (8,     )
+        #  one2one    t1f_t00  (8, 1, 9)  (8,     )
+
+        #  one2one    t00_t01  (8,     )  (8,    1)
+        #  one2one    t01_t01  (8,    1)  (8,    1)
+        #  one2one    t0f_t01  (8,    9)  (8,    1)
+        #  one2one    t10_t01  (8  1,  )  (8,    1)
+        #  one2one    t11_t01  (8, 1, 1)  (8,    1)
+        #  one2one    t1f_t01  (8, 1, 9)  (8,    1)
+
+        #  one2one    t00_t0c  (8,     )  (8,    5)
+        #  one2one    t01_t0c  (8,    1)  (8,    5)
+        #  one2one    t0f_t0c  (8,    9)  (8,    5)
+        #  one2one    t10_t0c  (8  1,  )  (8,    5)
+        #  one2one    t11_t0c  (8, 1, 1)  (8,    5)
+        #  one2one    t1f_t0c  (8, 1, 9)  (8,    5)
+
+        #  one2one    t00_t10  (8,     )  (8, 1,  )
+        #  one2one    t01_t10  (8,    1)  (8, 1,  )
+        #  one2one    t0f_t10  (8,    9)  (8, 1,  )
+        #  one2one    t10_t10  (8  1,  )  (8, 1,  )
+        #  one2one    t11_t10  (8, 1, 1)  (8, 1,  )
+        #  one2one    t1f_t10  (8, 1, 9)  (8, 1,  )
+
+        #  one2one    t00_t11  (8,     )  (8, 1, 1)
+        #  one2one    t01_t11  (8,    1)  (8, 1, 1)
+        #  one2one    t0f_t11  (8,    9)  (8, 1, 1)
+        #  one2one    t10_t11  (8  1,  )  (8, 1, 1)
+        #  one2one    t11_t11  (8, 1, 1)  (8, 1, 1) 6
+        #  one2one    t1f_t11  (8, 1, 9)  (8, 1, 1) 6
+
+        #  one2one    t00_t1c  (8,     )  (8, 1, 5)
+        #  one2one    t01_t1c  (8,    1)  (8, 1, 5)
+        #  one2one    t0f_t1c  (8,    9)  (8, 1, 5)
+        #  one2one    t10_t1c  (8  1,  )  (8, 1, 5)
+        #  one2one    t11_t1c  (8, 1, 1)  (8, 1, 5) 6
+        #  one2one    t1f_t1c  (8, 1, 9)  (8, 1, 5) 6
+
+        # many2one    xw0_x00  (6, 3,  )  (6,     )
+        # many2one    xw1_x00  (6, 3, 1)  (6,     )
+        # many2one    xwf_x00  (6, 3, 9)  (6,     )
+        # many2one    xw0_x01  (6, 3,  )  (6,    1)
+        # many2one    xw1_x01  (6, 3, 1)  (6,    1)
+        # many2one    xwf_x01  (6, 3, 9)  (6,    1)
+        # many2one    xw0_x0c  (6, 3,  )  (6,    5)
+        # many2one    xw1_x0c  (6, 3, 1)  (6,    5)
+        # many2one    xwf_x0c  (6, 3, 9)  (6,    5)
+
+        # many2one    xw0_x10  (6, 3,  )  (6, 1,  )
+        # many2one    xw1_x10  (6, 3, 1)  (6, 1,  )
+        # many2one    xwf_x10  (6, 3, 9)  (6, 1,  )
+        # many2one    xw0_x11  (6, 3,  )  (6, 1, 1)
+        # many2one    xw1_x11  (6, 3, 1)  (6, 1, 1) 6
+        # many2one    xwf_x11  (6, 3, 9)  (6, 1, 1) 6
+        # many2one    xw0_x1c  (6, 3,  )  (6, 1, 5)
+        # many2one    xw1_x1c  (6, 3, 1)  (6, 1, 5) 6
+        # many2one    xwf_x1c  (6, 3, 9)  (6, 1, 5) 6
+
+        #  one2many   x00_xw0  (6,     )  (6, 3,  )
+        #  one2many   x01_xw0  (6,    1)  (6, 3,  )
+        #  one2many   x0f_xw0  (6,    9)  (6, 3,  )
+        #  one2many   x00_xw1  (6,     )  (6, 3, 1)
+        #  one2many   x01_xw1  (6,    1)  (6, 3, 1)
+        #  one2many   x0f_xw1  (6,    9)  (6, 3, 1)
+        #  one2many   x00_xwc  (6,     )  (6, 3, 5)
+        #  one2many   x01_xwc  (6,    1)  (6, 3, 5)
+        #  one2many   x0f_xwc  (6,    9)  (6, 3, 5)
+
+        #  one2many   x10_xw0  (6, 1,  )  (6, 3,  )
+        #  one2many   x11_xw0  (6, 1, 1)  (6, 3,  )
+        #  one2many   x1f_xw0  (6, 1, 9)  (6, 3,  )
+        #  one2many   x10_xw1  (6, 1,  )  (6, 3, 1)
+        #  one2many   x11_xw1  (6, 1, 1)  (6, 3, 1) 6
+        #  one2many   x1f_xw1  (6, 1, 9)  (6, 3, 1) 6
+        #  one2many   x10_xwc  (6, 1,  )  (6, 3, 5)
+        #  one2many   x11_xwc  (6, 1, 1)  (6, 3, 5) 6
+        #  one2many   x1f_xwc  (6, 1, 9)  (6, 3, 5) 6
+
+        # many2many   xw0_xw0  (6, 3   )  (6, 3,  )
+        # many2many   xw1_xw0  (6, 3, 1)  (6, 3,  )
+        # many2many   xwf_xw0  (6, 3, 9)  (6, 3,  )
+        # many2many   xw0_xw1  (6, 3   )  (6, 3, 1)
+        # many2many   xw1_xw1  (6, 3, 1)  (6, 3, 1) 6
+        # many2many   xwf_xw1  (6, 3, 9)  (6, 3, 1) 6
+        # many2many   xw0_xwc  (6, 3   )  (6, 3, 5)
+        # many2many   xw1_xwc  (6, 3, 1)  (6, 3, 5) 6
+        # many2many   xwf_xwc  (6, 3, 9)  (6, 3, 5) 6
+
+        # many2many   0t0_0t0  (   8,  )  (   8,  )
+        # many2many   0t1_0t0  (   8, 1)  (   8,  )
+        # many2many   0tf_0t0  (   8, 9)  (   8,  )
+        # many2many   1t0_0t0  (1, 8   )  (   8,  )
+        # many2many   1t1_0t0  (1, 8, 1)  (   8,  )
+        # many2many   1tf_0t0  (1, 8, 9)  (   8,  )
+
+        # many2many   0t0_0t1  (   8,  )  (   8, 1)
+        # many2many   0t1_0t1  (   8, 1)  (   8, 1)
+        # many2many   0tf_0t1  (   8, 9)  (   8, 1)
+        # many2many   1t0_0t1  (1, 8   )  (   8, 1)
+        # many2many   1t1_0t1  (1, 8, 1)  (   8, 1)
+        # many2many   1tf_0t1  (1, 8, 9)  (   8, 1)
+
+        # many2many   0t0_0tc  (   8,  )  (   8, 5)
+        # many2many   0t1_0tc  (   8, 1)  (   8, 5)
+        # many2many   0tf_0tc  (   8, 9)  (   8, 5)
+        # many2many   1t0_0tc  (1, 8   )  (   8, 5)
+        # many2many   1t1_0tc  (1, 8, 1)  (   8, 5)
+        # many2many   1tf_0tc  (1, 8, 9)  (   8, 5)
+
+        # many2many   0t0_1t0  (   8,  )  (1, 8,  )
+        # many2many   0t1_1t0  (   8, 1)  (1, 8,  )
+        # many2many   0tf_1t0  (   8, 9)  (1, 8,  )
+        # many2many   1t0_1t0  (1, 8   )  (1, 8,  )
+        # many2many   1t1_1t0  (1, 8, 1)  (1, 8,  )
+        # many2many   1tf_1t0  (1, 8, 9)  (1, 8,  )
+
+        # many2many   0t0_1t1  (   8,  )  (1, 8, 1)
+        # many2many   0t1_1t1  (   8, 1)  (1, 8, 1)
+        # many2many   0tf_1t1  (   8, 9)  (1, 8, 1)
+        # many2many   1t0_1t1  (1, 8   )  (1, 8, 1)
+        # many2many   1t1_1t1  (1, 8, 1)  (1, 8, 1) 6
+        # many2many   1tf_1t1  (1, 8, 9)  (1, 8, 1) 6
+
+        # many2many   0t0_1tc  (   8,  )  (1, 8, 5)
+        # many2many   0t1_1tc  (   8, 1)  (1, 8, 5)
+        # many2many   0tf_1tc  (   8, 9)  (1, 8, 5)
+        # many2many   1t0_1tc  (1, 8   )  (1, 8, 5)
+        # many2many   1t1_1tc  (1, 8, 1)  (1, 8, 5) 6
+        # many2many   1tf_1tc  (1, 8, 9)  (1, 8, 5) 6
+
+        if self._sequence_code is None:
+
+            in_seq, out_seq = self.sequence_type.split('2')
+            # sequence_type
+            st = {'one': {'t', 't0', 't1', 'x', 'x0', 'x1'}, 'many': {'1t', 'xw'}}
+
+            if self.window_size == 0:
+                ws = {'1t'}
+            elif self.window_size == 1:
+                ws = {'t', 't0', 't1'}
+            else:
+                ws = {'x', 'x0', 'x1', 'xw'}
+
+            in_base = st[in_seq] & ws
+            out_base = st[out_seq] & ws
+
+            if (in_seq == 'many' or out_seq == 'many') and self.window_size == 1:
+                raise ValueError('Only with one2one can you use a window_size == 1')
+
+            if self.n_features == 1:
+                n_feats = ('0', '1')
+            elif self.n_features >= 2:
+                n_feats = ('f',)
+            else:
+                raise ValueError('n_features cannot be negative or zero')
+
+            in_codes = [ib + nf for ib in in_base for nf in n_feats]
+            if 't10' in in_codes and 't01' in in_codes:
+                in_codes.remove('t01')
+            if 'x10' in in_codes and 'x01' in in_codes:
+                in_codes.remove('x01')
+            if 'tf' in in_codes and 't0f' in in_codes:
+                in_codes.remove('t0f')
+            if 'xf' in in_codes and 'x0f' in in_codes:
+                in_codes.remove('x0f')
+            in_codes = set([ic.strip('0') for ic in in_codes])
+            in_code = max(in_codes, key=lambda x: len(x))
+
+            if self.n_classes == 2:
+                n_class = ('0', '1')
+            elif self.n_classes >= 3:
+                n_class = ('c',)
+            else:
+                raise ValueError('n_classes must be 2 or greater')
+
+            out_codes = [ob + nc for ob in out_base for nc in n_class]
+            if 't10' in out_codes and 't01' in out_codes:
+                out_codes.remove('t01')
+            if 'x10' in out_codes and 'x01' in out_codes:
+                out_codes.remove('x01')
+            if 'tc' in out_codes and 't0c' in out_codes:
+                out_codes.remove('t0c')
+            if 'xc' in out_codes and 'x0c' in out_codes:
+                out_codes.remove('x0c')
+            out_codes = set([oc.strip('0') for oc in out_codes])
+            out_code = max(out_codes, key=lambda x: len(x))
+
+            self._sequence_code = '_'.join([in_code, out_code])
+
+        return self._sequence_code
+
+    def generate_sliding(self, sequence_code=None):
 
         if self.sequence_type == 'many2one+time':
             # PLSTM: many2one (1088, 100, 2) -> (1088, 3)
@@ -317,43 +467,89 @@ class MixedSignal:
         sequence_code = sequence_code or self.sequence_code
         X_code, y_code = sequence_code.split('_')
 
-        if X_code == 't':
+        if X_code in ('t', 't0', 't00', '0t0'):
             X = self.mixed_signal
-        elif X_code == 't1':
+        elif X_code in ('t1', 't01', 't10'):
             X = self.mixed_signal[..., None]
+        elif X_code in ('1t', '1t0'):
+            X = self.mixed_signal[None, ...]
+        elif X_code in ('t11',):
+            X = self.mixed_signal[..., None, None]
+        elif X_code in ('1t1',):
+            X = self.mixed_signal[None, ..., None]
+        elif X_code in ('tf', '0tf', 't0f'):
+            X = self.inputs
+        elif X_code in ('t1f',):
+            X = self.inputs[:, None, :]
+        elif X_code in ('1tf',):
+            X = self.inputs[None, ...]
 
-        elif X_code == 'xw':
-            if self.n_samples == 1:
-                X = self.mixed_signal[None, ...]
-            else:
-                X = np.zeros((self.n_samples, self.window_size))
-                for j in range(self.window_size):
-                    X[:, j] = self.mixed_signal[j:j + self.n_samples]
-
+        elif X_code in ('x', 'x0', 'x00'):
+            X = self.mixed_signal[self.window_size - 1:]
+        elif X_code in ('x1', 'x10', 'x01'):
+            X = self.mixed_signal[self.window_size - 1:, None]
+        elif X_code == 'x11':
+            X = self.mixed_signal[self.window_size - 1:, None, None]
+        elif X_code in ('xf', 'x0f'):
+            X = self.inputs[self.window_size - 1:]
+        elif X_code == 'x1f':
+            X = self.inputs[self.window_size - 1:, None, :]
+        elif X_code in ('xw', 'xw0'):
+            X = np.zeros((self.n_samples, self.window_size))
+            for j in range(self.window_size):
+                X[:, j] = self.mixed_signal[j:j + self.n_samples]
         elif X_code == 'xw1':
-            if self.n_samples == 1:
-                X = self.mixed_signal[None, ..., None]
-            else:
-                X = np.zeros((self.n_samples, self.window_size, 1))
-                for j in range(self.window_size):
-                    X[:, j, 0] = self.mixed_signal[j:j + self.n_samples]
-
+            X = np.zeros((self.n_samples, self.window_size, 1))
+            for j in range(self.window_size):
+                X[:, j, 0] = self.mixed_signal[j:j + self.n_samples]
+        elif X_code == 'xwf':
+            X = np.zeros((self.n_samples, self.window_size, self.n_features))
+            for j in range(self.window_size):
+                X[:, j] = self.inputs[j:j + self.n_samples]
         else:
-            raise NotImplementedError
+            raise NotImplementedError(X_code)
 
-        if y_code == 't':
+        if y_code in ('t', 't0', 't00', '0t0'):
             y = self.labels
-        elif y_code == 'tc':
+        elif y_code in ('t1', 't01', 't10'):
+            y = self.labels[..., None]
+        elif y_code in ('1t', '1t0'):
+            y = self.labels[None, ...]
+        elif y_code in ('t11',):
+            y = self.labels[..., None, None]
+        elif y_code == '1t1':
+            y = self.labels[None, ..., None]
+        elif y_code in ('tc', '0tc', 't0c'):
             y = self.one_hots
+        elif y_code == 't1c':
+            y = self.one_hots[:, None, :]
+        elif y_code == '1tc':
+            y = self.one_hots[None, ...]
 
-        elif y_code == 'xc':
+        elif y_code in ('x', 'x0', 'x00'):
+            y = self.labels[self.window_size - 1:]
+        elif y_code in ('x1', 'x01', 'x10'):
+            y = self.labels[self.window_size - 1:, None]
+        elif y_code == 'x11':
+            y = self.labels[self.window_size - 1:, None, None]
+        elif y_code in ('xc', 'x0c'):
             y = self.one_hots[self.window_size - 1:]
+        elif y_code == 'x1c':
+            y = self.one_hots[self.window_size - 1:, None, :]
+        elif y_code in ('xw', 'xw0'):
+            y = np.zeros((self.n_samples, self.window_size))
+            for j in range(self.window_size):
+                y[:, j] = self.labels[j:j + self.n_samples]
+        elif y_code == 'xw1':
+            y = np.zeros((self.n_samples, self.window_size, 1))
+            for j in range(self.window_size):
+                y[:, j, 0] = self.labels[j:j + self.n_samples]
         elif y_code == 'xwc':
             y = np.zeros((self.n_samples, self.window_size, self.n_classes))
             for j in range(self.window_size):
                 y[:, j] = self.one_hots[j:j + self.n_samples]
         else:
-            raise NotImplementedError
+            raise NotImplementedError(y_code)
 
         return X, y
 

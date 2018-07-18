@@ -16,6 +16,14 @@ def factors(n):
     return set(reduce(list.__add__, ([i, n//i] for i in range(1, int(pow(n, 0.5) + 1)) if n % i == 0)))
 
 
+def bits2shape(bitstr, seq_bits):
+    shp = None
+    for bit in bitstr:
+        if bit in seq_bits:
+            shp = (seq_bits[bit], ) if shp is None else shp + (seq_bits[bit], )
+    return shp
+
+
 def name_generator() -> Text:
     alphabet = np.array(list(string.ascii_uppercase))
     return ''.join(alphabet[np.random.randint(0, len(alphabet), 3)])
@@ -157,8 +165,13 @@ def create_one_hots_from_labels(labels, n_classes):
 
 
 # generate a sequence of random numbers in [0, n_classes)
-def generate_sequence(length, n_classes):
-    return np.random.randint(0, n_classes, length)
+def generate_sequence(length, n_classes, labels=None):
+    if labels is None:
+        return np.random.randint(0, n_classes, length)
+    else:
+        assert n_classes == len(labels)
+        seq = np.random.randint(0, n_classes, length)
+        return labels[seq]
 
 
 # one hot encode sequence
