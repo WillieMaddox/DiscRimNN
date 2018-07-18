@@ -79,8 +79,8 @@ class MixedSignal:
             'window_size': self._window_size,
             'window_type': self.window_type,
             'network_type': self.network_type,
-            'sequence_code': self.sequence_code,
             'sequence_type': self.sequence_type,
+            'sequence_code': self.sequence_code,
             'sigs_coeffs': sigs_coeffs,
         }
 
@@ -93,6 +93,89 @@ class MixedSignal:
         self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
         self.model_weights_filename = os.path.join(self.out_dir, 'model_weights.h5')
         self.training_stats_filename = os.path.join(self.out_dir, 'training_stats.csv')
+
+    def generate(self):
+        """ Generate waves from property values."""
+
+        timestamps = []
+        mixed_signal = []
+        labels = []
+        inputs = []
+        for signal in self.signals:
+            signal.generate()
+            timestamps.append(signal.timestamps)
+            mixed_signal.append(signal.sample)
+            labels.append(signal.labels)
+            inputs.append(signal.inputs)
+
+        timestamps = np.hstack(timestamps)
+        mixed_signal = np.hstack(mixed_signal)
+        labels = np.hstack(labels)
+        inputs = np.vstack(inputs)
+
+        # Sanity check
+        assert len(timestamps) == len(mixed_signal) == len(labels) == len(inputs)
+
+        batch_size = self.batch_size if self.stateful else 1
+        window_size = self.window_size or 1
+
+        # clip data from the left so that it divides batch_size evenly.
+        if self.window_type == 'boxcar':
+            assert len(timestamps) >= window_size * batch_size
+            chop_index = len(timestamps) % (window_size * batch_size)
+        else:  # ('sliding' and 'random')
+            chop_index = (len(timestamps) - window_size + 1) % batch_size
+
+        # Sort the labels and mixed_signal chronologically.
+        sorted_indices = np.argsort(timestamps)[chop_index:]
+
+        self.timestamps = timestamps[sorted_indices]
+        self.mixed_signal = mixed_signal[sorted_indices]
+        self.labels = labels[sorted_indices]
+        self.inputs = inputs[sorted_indices]
+
+        self.n_timestamps = len(self.timestamps)
+        self.t_min = self.timestamps[0]
+        self.t_max = self.timestamps[-1]
+        if self._window_size is None:
+            self.window_size = self.n_timestamps
+
+        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
+
+        # window_type, window_size
+
+        # sliding, ws < 0                ->  raise ValueError('window_size must be non negative')
+        # boxcar , ws < 0                ->  raise ValueError('window_size must be non negative')
+        # random , ws < 0                ->  raise ValueError('window_size must be non negative')
+
+        # sliding, ws = 0                ->  (sliding, n_timestamps)
+        # boxcar , ws = 0                ->  (boxcar, n_timestamps)
+        # random , ws = 0                ->  (random, n_timestamps)
+
+        # sliding, ws = 1                ->  valid same as (boxcar, 1)
+        # boxcar , ws = 1                ->  valid same as (sliding, 1)
+        # random , ws = 1                ->  raise NotImplementedError
+
+        # sliding, 1 < ws < n_timestamps ->  valid
+        # boxcar , 1 < ws < n_timestamps ->  valid
+        # random , 1 < ws < n_timestamps ->  valid
+
+        # sliding, n_timestamps = ws     ->  valid same as boxcar and random
+        # boxcar , n_timestamps = ws     ->  valid same as sliding and random
+        # random , n_timestamps = ws     ->  valid same as sliding and boxcar
+
+        # sliding, n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
+        # boxcar , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
+        # random , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
+
+        if self.window_type == 'sliding':
+            return self.generate_sliding()
+        elif self.window_type == 'boxcar':
+            return self.generate_boxcar()
+        elif self.window_type == 'random':
+            return self.generate_sliding()
+        else:
+            raise ValueError('Invalid window_type: {}. Use "sliding", "boxcar" or "random"')
 
     @property
     def n_samples(self):
@@ -151,88 +234,6 @@ class MixedSignal:
         if 1 <= val <= self.n_timestamps:
             self._window_size = val
             self._n_samples = None
-
-    def generate(self):
-        """ Generate waves from property values."""
-
-        timestamps = []
-        mixed_signal = []
-        labels = []
-        inputs = []
-        for signal in self.signals:
-            signal.generate()
-            timestamps.append(signal.timestamps)
-            mixed_signal.append(signal.sample)
-            labels.append(signal.labels)
-            inputs.append(signal.inputs)
-
-        timestamps = np.hstack(timestamps)
-        mixed_signal = np.hstack(mixed_signal)
-        labels = np.hstack(labels)
-        inputs = np.vstack(inputs)
-
-        # Sanity check
-        assert len(timestamps) == len(mixed_signal) == len(labels) == len(inputs)
-
-        batch_size = self.batch_size if self.stateful else 1
-        window_size = self.window_size if self.window_size is not None else 1
-
-        # clip data from the left so that it divides batch_size evenly.
-        if self.window_type == 'boxcar':
-            assert len(timestamps) >= window_size * batch_size
-            chop_index = len(timestamps) % (window_size * batch_size)
-        else:  # ('sliding' and 'random')
-            chop_index = (len(timestamps) - window_size + 1) % batch_size
-
-        # Sort the labels and mixed_signal chronologically.
-        sorted_indices = np.argsort(timestamps)[chop_index:]
-
-        self.mixed_signal = mixed_signal[sorted_indices]
-        self.labels = labels[sorted_indices]
-        self.inputs = inputs[sorted_indices]
-        self.timestamps = timestamps[sorted_indices]
-        self.n_timestamps = len(self.timestamps)
-        self.t_min = self.timestamps[0]
-        self.t_max = self.timestamps[-1]
-        if self._window_size is None:
-            self.window_size = self.n_timestamps
-
-        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
-
-        # window_type, window_size
-
-        # sliding, ws < 0                ->  raise ValueError('window_size must be non negative')
-        # boxcar , ws < 0                ->  raise ValueError('window_size must be non negative')
-        # random , ws < 0                ->  raise ValueError('window_size must be non negative')
-
-        # sliding, ws = 0                ->  (sliding, n_timestamps)
-        # boxcar , ws = 0                ->  (boxcar, n_timestamps)
-        # random , ws = 0                ->  (random, n_timestamps)
-
-        # sliding, ws = 1                ->  valid same as (boxcar, 1)
-        # boxcar , ws = 1                ->  valid same as (sliding, 1)
-        # random , ws = 1                ->  raise NotImplementedError
-
-        # sliding, 1 < ws < n_timestamps ->  valid
-        # boxcar , 1 < ws < n_timestamps ->  valid
-        # random , 1 < ws < n_timestamps ->  valid
-
-        # sliding, n_timestamps = ws     ->  valid same as boxcar and random
-        # boxcar , n_timestamps = ws     ->  valid same as sliding and random
-        # random , n_timestamps = ws     ->  valid same as sliding and boxcar
-
-        # sliding, n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
-        # boxcar , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
-        # random , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
-
-        if self.window_type == 'sliding':
-            return self.generate_sliding()
-        elif self.window_type == 'boxcar':
-            return self.generate_boxcar()
-        elif self.window_type == 'random':
-            return self.generate_sliding()
-        else:
-            raise ValueError('Invalid window_type: {}. Use "sliding", "boxcar" or "random"')
 
     @property
     def sequence_code(self):

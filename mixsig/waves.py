@@ -7,7 +7,6 @@ from .utils import color_generator
 from .utils import normal_noise_generator
 from .utils import uniform_noise_generator
 from .utils import timesequence_generator
-from .utils import create_label_distribution
 from .utils import create_one_hots_from_labels
 from .utils import generate_sequence
 
@@ -310,25 +309,6 @@ class Wave:
         self._inputs = None
         self._label = None
 
-    @property
-    def n_classes(self):
-        return 1
-
-    @property
-    def sample(self):
-        if self._sample is None:
-            self._sample = self.d0xdt0()
-        return self._sample
-
-    @property
-    def n_timestamps(self):
-        if self._n_timestamps is None:
-            self._n_timestamps = len(self.timestamps)
-        return self._n_timestamps
-
-    def __len__(self):
-        return len(self.timestamps)
-
     def generate(self, ts=None, **kwargs):
         self.timestamps = self._timestamp_generator() if self.is_independent else ts
         if self.n_timestamps != len(self.timestamps):
@@ -342,6 +322,25 @@ class Wave:
         self._wp = WaveProps(a, w, o, p)
         self._sample = None
         self._inputs = None
+
+    @property
+    def n_classes(self):
+        return 1
+
+    @property
+    def n_timestamps(self):
+        if self._n_timestamps is None:
+            self._n_timestamps = len(self.timestamps)
+        return self._n_timestamps
+
+    def __len__(self):
+        return len(self.timestamps)
+
+    @property
+    def sample(self):
+        if self._sample is None:
+            self._sample = self.d0xdt0()
+        return self._sample
 
     @property
     def labels(self):
