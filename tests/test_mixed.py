@@ -28,9 +28,9 @@ def test_create_from_1_input_1_output():
     n_classes = 1
     msig = MixedSignal(
         sigs_coeffs,
+        *features,
         window_size=window_size,
         window_type='sliding',
-        features=features,
         run_label='test'
     )
 
@@ -57,9 +57,9 @@ def test_create_from_2_input_1_output():
     n_classes = 1
     msig = MixedSignal(
         sigs_coeffs,
+        *features,
         window_size=window_size,
         window_type='sliding',
-        features=features,
         run_label='test'
     )
 
@@ -278,9 +278,9 @@ def test_generate_sliding(ic, oc):
 
     msig = MixedSignal(
         sigs_coeffs,
+        *features,
         window_size=window_size,
         window_type='sliding',
-        features=features,
         run_label='test'
     )
 
@@ -328,7 +328,7 @@ def test_generate_sliding_window_size_is_1(sequence_type, n_features, n_classes)
     with pytest.raises(ValueError):
         MixedSignal(
             sigs_coeffs,
-            features=features,
+            *features,
             window_size=1,
             window_type='sliding',
             sequence_type=sequence_type,
@@ -353,7 +353,7 @@ def test_generate_sliding_one2one(window_size, n_features, n_classes):
 
     msig = MixedSignal(
         sigs_coeffs,
-        features=features,
+        *features,
         window_size=window_size,
         window_type='sliding',
         sequence_type=sequence_type,
@@ -404,7 +404,7 @@ def test_generate_sliding_not_one2one(sequence_type, window_size, n_features, n_
 
     msig = MixedSignal(
         sigs_coeffs,
-        features=features,
+        *features,
         window_size=window_size,
         window_type='sliding',
         sequence_type=sequence_type,

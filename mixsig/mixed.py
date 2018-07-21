@@ -11,7 +11,7 @@ from .waves import MixedWave
 class MixedSignal:
     def __init__(self,
                  sigs_coeffs,
-                 features=None,
+                 *features,
                  batch_size=1,
                  window_size=0,
                  window_type='sliding',
