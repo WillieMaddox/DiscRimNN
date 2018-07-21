@@ -5,11 +5,6 @@ from hypothesis import given
 from hypothesis import example
 from hypothesis import strategies as st
 from mixsig.utils import timesequence_generator
-from mixsig.waves import WavePropertyOld
-from mixsig.waves import AmplitudeOld
-from mixsig.waves import FrequencyOld
-from mixsig.waves import OffsetOld
-from mixsig.waves import PhaseOld
 from mixsig.waves import WaveProperty
 from mixsig.waves import Amplitude
 from mixsig.waves import Frequency
@@ -17,63 +12,6 @@ from mixsig.waves import Offset
 from mixsig.waves import Phase
 from mixsig.waves import Wave
 from mixsig.waves import MixedWave
-
-wavepropertyold = st.builds(
-    WavePropertyOld,
-    mean=st.one_of(
-        st.none(),
-        st.integers(min_value=1e-13, max_value=1e13),
-        st.floats(min_value=1e-13, max_value=1e13, allow_infinity=False, allow_nan=False)
-    ),
-    delta=st.one_of(
-        st.none(),
-        st.integers(min_value=0.0, max_value=1e5),
-        st.floats(min_value=0.0, max_value=1e5, allow_infinity=False, allow_nan=False)
-    )
-)
-
-
-@given(wavepropertyold)
-def test_wavepropertyold_generator_a(wp):
-    if isclose(wp.delta, 0, abs_tol=1e-9):
-        assert wp == wp(), f'{wp.mean} {wp.delta}'
-    else:
-        assert wp != wp(), f'{wp.mean} {wp.delta}'
-
-
-@pytest.mark.parametrize('mean,delta', [
-    (5, None),
-    (5, 0.0),
-    (5, 0),
-    (5, 1),
-    (5, 1.0),
-    (5.0, None),
-    (5.0, 0.0),
-    (5.0, 0),
-    (5.0, 1),
-    (5.0, 1.0),
-    (None, None),
-    (None, 0.0),
-    (None, 0),
-    (None, 1),
-    (None, 1.0),
-], ids=repr)
-@pytest.mark.parametrize('Wp', [WavePropertyOld, AmplitudeOld, FrequencyOld, OffsetOld, PhaseOld], ids=repr)
-def test_wavepropertyold_generator_b(Wp, mean, delta):
-    wp = Wp(mean, delta)
-    assert isinstance(wp, Wp)
-    assert isinstance(wp(), float)
-    assert wp == wp.mean
-    wp0 = wp()
-    wp1 = wp()
-    if isclose(wp.delta, 0):
-        assert wp0 == wp1
-        assert wp1 == wp0
-    else:
-        assert id(wp0) != id(wp1)
-        assert wp0 != wp1
-        assert wp1 != wp0
-
 
 waveproperty = st.builds(
     WaveProperty,
