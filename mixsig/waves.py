@@ -264,6 +264,7 @@ class Wave:
     def __init__(self,
                  *features,
                  time=None,
+                 label=None,
                  amplitude=None,
                  frequency=None,
                  offset=None,
@@ -272,10 +273,10 @@ class Wave:
                  color=None,
                  name=None):
 
-        self.timestamps = None
+        # self.timestamps = None
 
         self._timestamp_generator = timesequence_generator(**time) if time is not None else lambda: None
-        self.is_independent = time is not None
+        # self.is_independent = time is not None
 
         amplitude = amplitude or {}
         self.amplitude = Amplitude(**amplitude)
@@ -302,18 +303,27 @@ class Wave:
         self.name = name or name_generator()
 
         self.features = features or ('x',)
+        self._timestamps = None
         self._n_timestamps = None
         self._wp = None
+        self.indices = None
         self._sample = None
         self._labels = None
         self._inputs = None
-        self._label = None
+        self._label = label
 
-    def generate(self, ts=None, **kwargs):
-        self.timestamps = self._timestamp_generator() if self.is_independent else ts
+    def generate(self, ts=None, indices=None, **kwargs):
+
+        # self.timestamps = self._timestamp_generator() if self.is_independent else ts
+        self._timestamps = self._timestamp_generator()
+        if self._timestamps is None:
+            self._timestamps = ts
+
         if self.n_timestamps != len(self.timestamps):
             self._n_timestamps = None
             self._labels = None
+
+        self.indices = indices
         self.noise = self._noise_generator(self.n_timestamps)
         a = self.amplitude(**kwargs)
         w = self.frequency(**kwargs) * 2.0 * np.pi
@@ -324,13 +334,26 @@ class Wave:
         self._inputs = None
 
     @property
+    def timestamps(self):
+        if self.indices is None:
+            return self.timestamps_full
+        else:
+            return self.timestamps_full[self.indices]
+
+    @property
+    def timestamps_full(self):
+        if self._timestamps is None:
+            self._timestamps = self._timestamp_generator()
+        return self._timestamps
+
+    @property
     def n_classes(self):
         return 1
 
     @property
     def n_timestamps(self):
         if self._n_timestamps is None:
-            self._n_timestamps = len(self.timestamps)
+            self._n_timestamps = len(self.timestamps_full)
         return self._n_timestamps
 
     def __len__(self):
@@ -338,12 +361,26 @@ class Wave:
 
     @property
     def sample(self):
+        if self.indices is None:
+            return self.sample_full
+        else:
+            return self.sample_full[self.indices]
+
+    @property
+    def sample_full(self):
         if self._sample is None:
             self._sample = self.d0xdt0()
         return self._sample
 
     @property
     def labels(self):
+        if self.indices is None:
+            return self.labels_full
+        else:
+            return self.labels_full[self.indices]
+
+    @property
+    def labels_full(self):
         if self._labels is None:
             self._labels = np.zeros((self.n_timestamps,), dtype=int) + self.label
         return self._labels
@@ -358,8 +395,15 @@ class Wave:
 
     @property
     def inputs(self):
+        if self.indices is None:
+            return self.inputs_full
+        else:
+            return self.inputs_full[self.indices]
+
+    @property
+    def inputs_full(self):
         if self._inputs is None:
-            self._inputs = np.zeros((len(self.timestamps), len(self.features)))
+            self._inputs = np.zeros((self.n_timestamps, len(self.features)))
             for i, feat in enumerate(self.features):
                 if feat in ('x', 'd0xdt0'):
                     feature = self.d0xdt0()
@@ -370,7 +414,7 @@ class Wave:
                 elif feat == 'd3xdt3':
                     feature = self.d3xdt3()
                 elif feat == 'time':
-                    feature = self.timestamps
+                    feature = self.timestamps_full
                 else:
                     raise ValueError(f'Unknown feature {feat}')
                 self._inputs[:, i] = feature
@@ -378,52 +422,53 @@ class Wave:
 
     def d0xdt0(self):
         a, w, o, p = self._wp
-        return a * np.sin(w * self.timestamps - p) + o + self.noise
+        return a * np.sin(w * self.timestamps_full - p) + o + self.noise
 
     def d1xdt1(self):
         a, w, o, p = self._wp
-        return a * w * np.cos(w * self.timestamps - p)
+        return a * w * np.cos(w * self.timestamps_full - p)
 
     def d2xdt2(self):
         a, w, o, p = self._wp
-        return -1 * a * w ** 2 * np.sin(w * self.timestamps - p)
+        return -1 * a * w ** 2 * np.sin(w * self.timestamps_full - p)
 
     def d3xdt3(self):
         a, w, o, p = self._wp
-        return -1 * a * w ** 3 * np.cos(w * self.timestamps - p)
+        return -1 * a * w ** 3 * np.cos(w * self.timestamps_full - p)
 
     def __repr__(self):
         return f'Wave(amplitude={self.amplitude}, frequency={self.frequency}, offset={self.offset}, phase={self.phase})'
 
 
 class MixedWave:
-    def __init__(self,
-                 *features,
-                 mwave_coeffs=None,
-                 ):
+    def __init__(self, classes=None, mwave_coeffs=None):
 
         self.name = 'Mixed'
+        self.signals = None
+        self.classes = np.array(classes)
+        self.timestamps = None
+        self.props = None
         self.labels = None
         self.one_hots = None
-        self.signals = None
+        self.samples = None
         self.mixed_signal = None
+        self.wave_inputs = None
         self.inputs = None
-        self.mixed_inputs = None
-        self.timestamps = None
+
         self._sample = None
         self._label = None
 
         if 'time' in mwave_coeffs:
             self.timestamp_generator = timesequence_generator(**mwave_coeffs['time'])
 
-        mixed_signal_prop_defaults = {
+        mixed_wave_prop_defaults = {
             'amplitude': {'mean': 1, 'delta': 0},
             'frequency': {'mean': 1, 'delta': 0},
             'offset': {'mean': 0, 'delta': 0},
             'phase': {'mean': 0, 'delta': 0},
         }
         self.mixed_wave_props = {}
-        for prop_name, default_coeffs in mixed_signal_prop_defaults.items():
+        for prop_name, default_coeffs in mixed_wave_prop_defaults.items():
             coeffs = mwave_coeffs[prop_name] if prop_name in mwave_coeffs else default_coeffs
             if prop_name == 'amplitude':
                 self.mixed_wave_props[prop_name] = Amplitude(**coeffs)
@@ -434,43 +479,38 @@ class MixedWave:
             elif prop_name == 'phase':
                 self.mixed_wave_props[prop_name] = Phase(**coeffs)
 
-        self.features = features or ('x',)
-        self.n_features = len(self.features)
-
-        self.waves = [Wave(*self.features, **coeffs) for coeffs in mwave_coeffs['waves_coeffs']]
-        self.n_classes = len(self.waves)
-
     def generate(self):
         """ Generate waves from property values."""
         # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
         # generate new timestamps
         self.timestamps = self.timestamp_generator()
+
         # generate new mixed signal properties.
-        props = {name: prop() for name, prop in self.mixed_wave_props.items()}
+        self.props = {name: prop() for name, prop in self.mixed_wave_props.items()}
 
         # generate new individual waves.
-        for wave in self.waves:
-            wave.generate(self.timestamps, **props)
+        # for wave in self.waves:
+        #     wave.generate(self.timestamps, **self.props)
 
         # create a uniform distribution of class labels -> np.array([2,1,3, ... ,1])
         # (500,), (t,), (n_timestamps,)
-        self.labels = generate_labels(len(self.timestamps), self.n_classes, labels=self.label)
+        self.labels = generate_labels(len(self.timestamps), self.n_classes, labels=self.classes)
 
         # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
         # (500, 4), (t, c), (n_timestamps, n_classes)
-        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
+        # self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
 
         # (4, 500), (c, t), (n_classes, n_timestamps)
-        self.samples = np.vstack([wave.sample for wave in self.waves if not wave.is_independent])
+        # self.samples = np.vstack([wave.sample for wave in self.waves if not wave.is_independent])
 
         # (500,), (t,), (n_timestamps,)
-        self.mixed_signal = np.sum(self.one_hots.T * self.samples, axis=0)
+        # self.mixed_signal = np.sum(self.one_hots.T * self.samples, axis=0)
 
         # (4, 500, 2), (c, t, f), (n_classes, n_timestamps, n_features)
-        self.wave_inputs = np.stack([wave.inputs for wave in self.waves if not wave.is_independent])
+        # self.wave_inputs = np.stack([wave.inputs for wave in self.waves if not wave.is_independent])
 
         # (500, 2), (t, f), (n_timestamps, n_features)
-        self.inputs = np.sum(self.one_hots.T[..., None] * self.wave_inputs, axis=0)
+        # self.inputs = np.sum(self.one_hots.T[..., None] * self.wave_inputs, axis=0)
 
     @property
     def sample(self):
@@ -478,6 +518,9 @@ class MixedWave:
             self._sample = self.mixed_signal
         return self._sample
 
+    @property
+    def n_classes(self):
+        return len(self.classes)
     @property
     def n_timestamps(self):
         return len(self.timestamps)

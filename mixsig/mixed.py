@@ -17,6 +17,7 @@ class MixedSignal:
                  window_type='sliding',
                  network_type='RNN',
                  sequence_type='many2one',
+                 classification_type='categorical',
                  stateful=False,
                  run_label=None,
                  n_groups=5,
@@ -42,7 +43,6 @@ class MixedSignal:
         self.mixed_signal = None
         self.n_timestamps = None
         self._n_samples = None
-
         self._window_size = None if window_size < 1 else window_size
 
         self.window_type = window_type.lower()
@@ -58,19 +58,36 @@ class MixedSignal:
         if 'time' in sigs_coeffs:
             self.sequence_generator = timesequence_generator(**sigs_coeffs['time'])
 
-        self.signals = []
-        self.n_classes = 0
-        for coeffs in sigs_coeffs:
-            if 'waves_coeffs' in coeffs:
-                signal = MixedWave(*self.features, mwave_coeffs=coeffs)
-                signal.label = np.arange(self.n_classes, self.n_classes + signal.n_classes)
+        mwave_indexes = []
+        n_mixed_waves = 0
+        mwave_idx = None
+        has_time = []
+        for i, coeffs in enumerate(sigs_coeffs):
+            if 'time' in coeffs:
+                has_time.append(i)
             else:
-                signal = Wave(*self.features, **coeffs)
-                signal.label = self.n_classes
-            self.n_classes += signal.n_classes
-            self.signals.append(signal)
-        # self.n_classes = sum(s.n_classes for s in self.signals)
+                mwave_indexes.append(i)
+            if 'name' in coeffs and coeffs['name'].lower() == 'mixed_wave':
+                n_mixed_waves += 1
+                mwave_idx = i
 
+        assert n_mixed_waves in (0, 1), print(f'only zero or one mixed waves allowed, found {n_mixed_waves}')
+
+        if n_mixed_waves:
+            assert mwave_idx in has_time, print('mixed-wave must have keyword, time.')
+            assert len(sigs_coeffs) > len(has_time)
+            assert len(mwave_indexes) > 1, print('Need more than one wave for a mixed-wave')
+            mwave_coeffs = sigs_coeffs.pop(mwave_idx)
+            mwave_indexes = [i if i < mwave_idx else i - 1 for i in mwave_indexes]
+            self.mixed_wave = MixedWave(classes=mwave_indexes, mwave_coeffs=mwave_coeffs)
+        else:
+            assert len(sigs_coeffs) == len(has_time)
+            self.mixed_wave = None
+
+        self.waves = [Wave(*self.features, label=i, **coeffs) for i, coeffs in enumerate(sigs_coeffs)]
+        self.n_classes = len(self.waves)
+
+        self.classification_type = 'categorical' if self.n_classes > 2 else classification_type
 
         run_label = run_label or get_datetime_now(fmt='%Y_%m%d_%H%M')
 
@@ -97,24 +114,27 @@ class MixedSignal:
     def generate(self):
         """ Generate waves from property values."""
 
+        if self.mixed_wave:
+            self.mixed_wave.generate()
         timestamps = []
-        mixed_signal = []
         labels = []
-        inputs = []
-        for signal in self.signals:
-            signal.generate()
-            timestamps.append(signal.timestamps)
-            mixed_signal.append(signal.sample)
-            labels.append(signal.labels)
-            inputs.append(signal.inputs)
 
-        timestamps = np.hstack(timestamps)
-        mixed_signal = np.hstack(mixed_signal)
+        # generate new individual waves.
+        inputs = []
+        for i, wave in enumerate(self.waves):
+            if i in self.mixed_wave.classes:
+                indices = np.where(self.mixed_wave.labels == i)[0]
+                wave.generate(self.mixed_wave.timestamps, indices=indices, **self.mixed_wave.props)
+            else:
+                wave.generate()
+
+            timestamps = np.append(timestamps, wave.timestamps)
+            labels.append(wave.labels)
+            inputs.append(wave.inputs)
+
         labels = np.hstack(labels)
         inputs = np.vstack(inputs)
 
-        # Sanity check
-        assert len(timestamps) == len(mixed_signal) == len(labels) == len(inputs)
 
         batch_size = self.batch_size if self.stateful else 1
         window_size = self.window_size or 1
@@ -130,7 +150,6 @@ class MixedSignal:
         sorted_indices = np.argsort(timestamps)[chop_index:]
 
         self.timestamps = timestamps[sorted_indices]
-        self.mixed_signal = mixed_signal[sorted_indices]
         self.labels = labels[sorted_indices]
         self.inputs = inputs[sorted_indices]
 
@@ -141,6 +160,11 @@ class MixedSignal:
             self.window_size = self.n_timestamps
 
         self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
+
+        self.mixed_signal = self.inputs[..., 0]
+
+        # Sanity check
+        assert len(self.timestamps) == len(self.mixed_signal) == len(self.labels) == len(self.inputs) == len(self.one_hots)
 
         # window_type, window_size
 
@@ -404,7 +428,8 @@ class MixedSignal:
             elif self.window_size == 1:
                 ws = {'t', 't0', 't1'}
             else:
-                ws = {'x', 'x0', 'x1', 'xw'}
+                # ws = {'x', 'x0', 'x1', 'xw'}
+                ws = {'x', 'x0', 'xw'}
 
             in_base = st[in_seq] & ws
             out_base = st[out_seq] & ws
@@ -432,7 +457,12 @@ class MixedSignal:
             in_code = max(in_codes, key=lambda x: len(x))
 
             if self.n_classes == 2:
-                n_class = ('0', '1')
+                if self.classification_type == 'binary':
+                    n_class = ('0', '1')
+                elif self.classification_type == 'categorical':
+                    n_class = ('c',)
+                else:
+                    ValueError(f'incorrect classification_type {self.classification_type}')
             elif self.n_classes >= 3:
                 n_class = ('c',)
             else:

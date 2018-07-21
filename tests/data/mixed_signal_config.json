@@ -3,8 +3,8 @@
     "window_size": 10,
     "window_type": "sliding",
     "network_type": "RNN",
-    "sequence_code": "xw1_xc",
     "sequence_type": "many2one",
+    "sequence_code": "xw1_xc",
     "sigs_coeffs": [
         {
             "amplitude": {
@@ -66,28 +66,5 @@
             "name": "C",
             "color": "#0000ff"
         }
-    ],
-    "msig_coeffs": {
-        "amplitude": {
-            "mean": 10,
-            "delta": 2
-        },
-        "frequency": {
-            "mean": 25,
-            "delta": 0
-        },
-        "offset": {
-            "mean": 1,
-            "delta": 5
-        },
-        "phase": {
-            "mean": 0,
-            "delta": 1
-        },
-        "time": {
-            "t_min": 0,
-            "t_max": 75,
-            "n_timestamps": 301
-        }
-    }
+    ]
 }

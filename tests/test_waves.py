@@ -371,28 +371,23 @@ def test_wave_raises_invalid_feature():
 def test_mixedwave_features_and_classes(n_features, n_classes):
     n_timestamps = 301
     features = [('x',), ('x', 'dxdt'), ('x', 'dxdt', 'd2xdt2')][n_features - 1]
-    waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
+    # waves_coeffs = [{'frequency': {'mean': 1, 'delta': 0.5}}] * n_classes
     mwave_coeffs = {
-        'waves_coeffs': waves_coeffs,
+        # 'waves_coeffs': waves_coeffs,
+        'name': 'mixed_wave',
         'time': {'t_min': 0, 't_max': 2, 'n_timestamps': n_timestamps}
     }
-
+    # sigs_coeffs = [mwave_coeffs, *waves_coeffs]
     mwave = MixedWave(
-        *features,
+        classes=list(range(n_classes)),
         mwave_coeffs=mwave_coeffs,
     )
 
-    assert len(mwave.waves) == len(waves_coeffs)
+    # assert len(mwave.waves) == len(waves_coeffs)
     mwave.generate()
     assert mwave.labels.shape == (n_timestamps,)
-    assert mwave.one_hots.shape == (n_timestamps, n_classes)
-    assert mwave.samples.shape == (n_classes, n_timestamps)
-    assert mwave.mixed_signal.shape == (n_timestamps, )
-    assert mwave.wave_inputs.shape == (n_classes, n_timestamps, n_features)
-    assert mwave.inputs.shape == (n_timestamps, n_features)
+    # assert mwave.one_hots.shape == (n_timestamps, n_classes)
 
-    i_timestamp = np.random.randint(n_timestamps)
-    i_label = mwave.labels[i_timestamp]
-    assert mwave.one_hots[i_timestamp][i_label] == 1
-    assert mwave.mixed_signal[i_timestamp] == mwave.samples[i_label, i_timestamp]
-    assert np.all(mwave.inputs[i_timestamp] == mwave.wave_inputs[i_label, i_timestamp])
+    # i_timestamp = np.random.randint(n_timestamps)
+    # i_label = mwave.labels[i_timestamp]
+    # assert mwave.one_hots[i_timestamp][i_label] == 1
