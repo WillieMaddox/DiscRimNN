@@ -8,7 +8,7 @@ from .utils import normal_noise_generator
 from .utils import uniform_noise_generator
 from .utils import timesequence_generator
 from .utils import create_one_hots_from_labels
-from .utils import generate_sequence
+from .utils import generate_labels
 
 WaveProps = namedtuple('WaveProps', 'a w o p')
 
@@ -414,7 +414,7 @@ class MixedWave:
         self._label = None
 
         if 'time' in mwave_coeffs:
-            self.sequence_generator = timesequence_generator(**mwave_coeffs['time'])
+            self.timestamp_generator = timesequence_generator(**mwave_coeffs['time'])
 
         mixed_signal_prop_defaults = {
             'amplitude': {'mean': 1, 'delta': 0},
@@ -444,7 +444,7 @@ class MixedWave:
         """ Generate waves from property values."""
         # First process the timestamp dependent waves.  (i.e. make a mixed signal wave.)
         # generate new timestamps
-        self.timestamps = self.sequence_generator()
+        self.timestamps = self.timestamp_generator()
         # generate new mixed signal properties.
         props = {name: prop() for name, prop in self.mixed_wave_props.items()}
 
@@ -454,7 +454,7 @@ class MixedWave:
 
         # create a uniform distribution of class labels -> np.array([2,1,3, ... ,1])
         # (500,), (t,), (n_timestamps,)
-        self.labels = generate_sequence(len(self.timestamps), self.n_classes, labels=self.label)
+        self.labels = generate_labels(len(self.timestamps), self.n_classes, labels=self.label)
 
         # create one-hots from labels -> np.array([[0,0,1,0], [0,1,0,0], [0,0,0,1], ... ,[0,1,0,0]])
         # (500, 4), (t, c), (n_timestamps, n_classes)

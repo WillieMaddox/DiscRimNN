@@ -6,7 +6,7 @@ import numpy as np
 from mixsig.utils import timesequence_generator
 from mixsig.utils import create_label_distribution
 from mixsig.utils import create_one_hots_from_labels
-from mixsig.utils import generate_sequence
+from mixsig.utils import generate_labels
 from mixsig.utils import one_hot_encode
 from mixsig.utils import one_hot_decode
 
@@ -97,7 +97,7 @@ def test_one_hot_encoder_decoder_1():
     length = 20
     n_classes = 3
 
-    sequence = generate_sequence(length, n_classes)
+    sequence = generate_labels(length, n_classes)
     assert sequence.shape == (length,)
     assert np.max(sequence) == n_classes - 1
 

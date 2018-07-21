@@ -165,7 +165,7 @@ def create_one_hots_from_labels(labels, n_classes):
 
 
 # generate a sequence of random numbers in [0, n_classes)
-def generate_sequence(length, n_classes, labels=None):
+def generate_labels(length, n_classes, labels=None):
     if labels is None:
         return np.random.randint(0, n_classes, length)
     else:
