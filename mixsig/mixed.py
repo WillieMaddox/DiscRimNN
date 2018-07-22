@@ -4,6 +4,7 @@ import numpy as np
 from .utils import get_datetime_now
 from .utils import timesequence_generator
 from .utils import create_one_hots_from_labels
+from .utils import one_hot_encode
 from .waves import Wave
 from .waves import MixedWave
 
@@ -159,8 +160,8 @@ class MixedSignal:
         if self._window_size is None:
             self.window_size = self.n_timestamps
 
-        self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
-
+        # self.one_hots = create_one_hots_from_labels(self.labels, self.n_classes)
+        self.one_hots = one_hot_encode(self.labels, self.n_classes)
         self.mixed_signal = self.inputs[..., 0]
 
         # Sanity check
