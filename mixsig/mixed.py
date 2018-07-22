@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+from keras.utils import Sequence
 from .utils import get_datetime_now
 from .utils import string2shape
 from .utils import shape2string
@@ -37,6 +38,7 @@ class MixedSignal:
             assert batch_size > 0
         else:
             batch_size = 1
+
         self.stateful = stateful
         self.batch_size = batch_size
 
@@ -116,7 +118,7 @@ class MixedSignal:
         self.model_weights_filename = os.path.join(self.out_dir, 'model_weights.h5')
         self.training_stats_filename = os.path.join(self.out_dir, 'training_stats.csv')
 
-    def generate(self):
+    def generate(self, sequence_code=None):
         """ Generate waves from property values."""
 
         if self.mixed_wave:
@@ -198,11 +200,11 @@ class MixedSignal:
         # random , n_timestamps < ws     ->  raise ValueError('window_size must be <= n_timestamps')
 
         if self.window_type == 'sliding':
-            return self.generate_sliding()
+            return self.generate_sliding(sequence_code=sequence_code)
         elif self.window_type == 'boxcar':
             return self.generate_boxcar()
         elif self.window_type == 'random':
-            return self.generate_sliding()
+            return self.generate_sliding(sequence_code=sequence_code)
         else:
             raise ValueError('Invalid window_type: {}. Use "sliding", "boxcar" or "random"')
 
@@ -691,7 +693,7 @@ class MixedSignal:
         else:
             return x, y, indices, n_batches
 
-    def generate_samples(self, n_samples):
+    def generate_samples(self, n_samples, sequence_code=None):
         # This is best suited for generating data where window_size == n_timestamps.
         # examples:
         # if n_samples == 0
@@ -705,7 +707,7 @@ class MixedSignal:
         X = []
         y = []
         for i in range(n_samples):
-            Xi, yi = self.generate()
+            Xi, yi = self.generate(sequence_code=sequence_code)
             X.append(Xi)
             y.append(yi)
         return np.stack(X), np.stack(y)
@@ -728,3 +730,55 @@ class MixedSignal:
         os.makedirs(self.out_dir, exist_ok=True)
         with open(self.config_filename, 'w') as ofs:
             json.dump(self.config_dict, ofs, indent=4)
+
+
+class SignalGenerator(Sequence):
+    def __init__(self,
+                 n_samples,
+                 batch_size,
+                 msig,
+                 inout_shape_code='tf_tc'):
+
+        """Initialization"""
+        self.n_samples = n_samples
+        self.batch_size = batch_size
+
+        self.inout_shape_code = inout_shape_code
+        in_shape, out_shape = msig.in_out_shape_decoder(inout_shape_code)
+        self.in_batch_shape = (batch_size,) + in_shape
+        self.out_batch_shape = (batch_size,) + out_shape
+
+        self.generate = msig.generate
+
+        self.indexes = np.arange(n_samples)
+        # self.on_epoch_end()
+
+    def __len__(self):
+        """Denotes the number of batches per epoch"""
+        # return int(np.floor(self.n_samples / self.batch_size))
+        return self.n_samples // self.batch_size
+
+    def __getitem__(self, index):
+        """Generate one batch of data"""
+        # Generate indexes of the batch
+        indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
+
+        # Generate and return the data
+        X, y = self._batch_generator(indexes)
+
+        return X, y
+
+    def on_epoch_end(self):
+        """Updates indexes after each epoch"""
+        self.indexes = np.arange(self.n_samples)
+
+    def _batch_generator(self, indexes):
+        """Generates data containing batch_size samples"""
+        # Initialization
+        X = np.empty(self.in_batch_shape)
+        y = np.empty(self.out_batch_shape, dtype=int)
+
+        # Generate data
+        for i, _ in enumerate(indexes):
+            X[i], y[i] = self.generate(sequence_code=self.inout_shape_code)
+        return X, y
