@@ -33,6 +33,8 @@ class MixedSignal:
 
         if stateful:
             assert batch_size > 0
+        else:
+            batch_size = 1
         self.stateful = stateful
         self.batch_size = batch_size
 
@@ -117,13 +119,12 @@ class MixedSignal:
 
         if self.mixed_wave:
             self.mixed_wave.generate()
+        # generate new waves.
         timestamps = []
         labels = []
-
-        # generate new individual waves.
         inputs = []
         for i, wave in enumerate(self.waves):
-            if i in self.mixed_wave.classes:
+            if self.mixed_wave and i in self.mixed_wave.classes:
                 indices = np.where(self.mixed_wave.labels == i)[0]
                 wave.generate(self.mixed_wave.timestamps, indices=indices, **self.mixed_wave.props)
             else:
@@ -137,7 +138,6 @@ class MixedSignal:
         inputs = np.vstack(inputs)
 
 
-        batch_size = self.batch_size if self.stateful else 1
         window_size = self.window_size or 1
 
         # clip data from the left so that it divides batch_size evenly.
@@ -630,6 +630,7 @@ class MixedSignal:
         return X, y
 
     def generate_group(self, n_msigs, shuffle_inplace=False):
+        # This is best suited for generating using the sliding window method.
         # examples:
         # if n_samples == 1
         # (1088, 100, 1) -> (1 * 1088, 100, 1) -> (1088, 100, 1)
@@ -651,22 +652,23 @@ class MixedSignal:
             return x, y, indices, n_batches
 
     def generate_samples(self, n_samples):
+        # This is best suited for generating data where window_size == n_timestamps.
         # examples:
         # if n_samples == 0
-        # (1088, 1) -> (1088, 1)
+        # (1200, 1) -> (1200, 1)
         # if n_samples == 1
-        # (1088, 1) -> (1, 1088, 1)
+        # (1200, 1) -> (1, 1200, 1)
         # if n_samples == 32
-        # (1088, 1) -> (32, 1088, 1)
+        # (1200, 1) -> (32, 1200, 1)
         if n_samples < 1:
             raise ValueError('n_samples must be >= 1')
-        x = []
+        X = []
         y = []
         for i in range(n_samples):
-            xi, yi = self.generate()
-            x.append(xi)
+            Xi, yi = self.generate()
+            X.append(Xi)
             y.append(yi)
-        return np.stack(x), np.stack(y)
+        return np.stack(X), np.stack(y)
 
     def generator(self, n_msigs, batch_size, training=False):
         x, y, indices, n_batches = self.generate_group(n_msigs)
@@ -681,17 +683,6 @@ class MixedSignal:
             idx = indices[i * batch_size:(i + 1) * batch_size]
             i += 1
             yield x[idx], y[idx]
-
-    # def __next__(self):
-    #     return self.next()
-    #
-    # def next(self):
-    #     # with self.lock:
-    #     if self.group_index == 0:
-    #         X, y, self.group_indices, n = self.generate_group(self.n_groups)
-    #     self.group_index = (self.group_index + 1) % (len(X) // self.batch_size)
-    #     idx = self.group_indices[self.group_index * self.batch_size:(self.group_index + 1) * self.batch_size]
-    #     return X[idx], y[idx]
 
     def save_config(self):
         os.makedirs(self.out_dir, exist_ok=True)
