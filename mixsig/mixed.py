@@ -142,10 +142,10 @@ class MixedSignal:
 
         # clip data from the left so that it divides batch_size evenly.
         if self.window_type == 'boxcar':
-            assert len(timestamps) >= window_size * batch_size
-            chop_index = len(timestamps) % (window_size * batch_size)
+            assert len(timestamps) >= window_size * self.batch_size
+            chop_index = len(timestamps) % (window_size * self.batch_size)
         else:  # ('sliding' and 'random')
-            chop_index = (len(timestamps) - window_size + 1) % batch_size
+            chop_index = (len(timestamps) - window_size + 1) % self.batch_size
 
         # Sort the labels and mixed_signal chronologically.
         sorted_indices = np.argsort(timestamps)[chop_index:]
