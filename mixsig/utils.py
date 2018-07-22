@@ -16,12 +16,21 @@ def factors(n):
     return set(reduce(list.__add__, ([i, n//i] for i in range(1, int(pow(n, 0.5) + 1)) if n % i == 0)))
 
 
-def bits2shape(bitstr, seq_bits):
+def string2shape(s, seq_chars):
     shp = None
-    for bit in bitstr:
-        if bit in seq_bits:
-            shp = (seq_bits[bit], ) if shp is None else shp + (seq_bits[bit], )
+    for char in s:
+        if char in seq_chars:
+            shp = (seq_chars[char], ) if shp is None else shp + (seq_chars[char], )
     return shp
+
+
+def shape2string(shp, seq_chars):
+    chars_seq = {v: k for k, v in seq_chars.items()}
+    s = None
+    for dim in shp:
+        if dim in chars_seq.values():
+            s = chars_seq[dim] if s is None else s + chars_seq[dim]
+    return s
 
 
 def name_generator() -> Text:

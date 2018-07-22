@@ -2,6 +2,8 @@ import os
 import json
 import numpy as np
 from .utils import get_datetime_now
+from .utils import string2shape
+from .utils import shape2string
 from .utils import timesequence_generator
 from .utils import create_one_hots_from_labels
 from .utils import one_hot_encode
@@ -119,6 +121,7 @@ class MixedSignal:
 
         if self.mixed_wave:
             self.mixed_wave.generate()
+
         # generate new waves.
         timestamps = []
         labels = []
@@ -130,10 +133,11 @@ class MixedSignal:
             else:
                 wave.generate()
 
-            timestamps = np.append(timestamps, wave.timestamps)
+            timestamps.append(wave.timestamps)
             labels.append(wave.labels)
             inputs.append(wave.inputs)
 
+        timestamps = np.hstack(timestamps)
         labels = np.hstack(labels)
         inputs = np.vstack(inputs)
 
@@ -260,10 +264,8 @@ class MixedSignal:
             self._window_size = val
             self._n_samples = None
 
-    @property
-    def sequence_code(self):
+    def in_out_shape_encoder(self, in_shape, out_shape):
 
-        # TODO: unit tests to make sure all these pathways are correct.
         # sequence_types
         # t -> n_[t]imestamps
         # x -> n_samples (or number of sub-samples)
@@ -283,6 +285,24 @@ class MixedSignal:
         # w = 3 (sliding), w = 2 (boxcar)
         # f = 9
         # c = 5
+
+
+        seq_bits = {
+            '1': 1,
+            't': self.n_timestamps,
+            'x': self.n_samples,
+            'w': self.window_size,
+            'f': self.n_features,
+            'c': self.n_classes,
+        }
+
+        ic = shape2string(in_shape, seq_bits)
+        oc = shape2string(out_shape, seq_bits)
+
+        in_out_code = '_'.join([ic, oc])
+        return in_out_code
+
+    def in_out_shape_decoder(self, in_out_code):
 
         #  one2one    t00_t00  (8,     )  (8,     )
         #  one2one    t01_t00  (8,    1)  (8,     )
@@ -418,6 +438,26 @@ class MixedSignal:
         # many2many   1t1_1tc  (1, 8, 1)  (1, 8, 5) 6
         # many2many   1tf_1tc  (1, 8, 9)  (1, 8, 5) 6
 
+        seq_bits = {
+            '1': 1,
+            't': self.n_timestamps,
+            'x': self.n_samples,
+            'w': self.window_size,
+            'f': self.n_features,
+            'c': self.n_classes,
+        }
+
+        ic, oc = in_out_code.split('_')
+        in_shape = string2shape(ic, seq_bits)
+        out_shape = string2shape(oc, seq_bits)
+
+        return in_shape, out_shape
+
+    @property
+    def sequence_code(self):
+
+        # TODO: unit tests to make sure all these pathways are correct.
+
         if self._sequence_code is None:
 
             in_seq, out_seq = self.sequence_type.split('2')
@@ -463,7 +503,7 @@ class MixedSignal:
                 elif self.classification_type == 'categorical':
                     n_class = ('c',)
                 else:
-                    ValueError(f'incorrect classification_type {self.classification_type}')
+                    raise ValueError(f'incorrect classification_type {self.classification_type}')
             elif self.n_classes >= 3:
                 n_class = ('c',)
             else:
@@ -629,7 +669,7 @@ class MixedSignal:
 
         return X, y
 
-    def generate_group(self, n_msigs, shuffle_inplace=False):
+    def generate_groups(self, n_groups, shuffle_inplace=False):
         # This is best suited for generating using the sliding window method.
         # examples:
         # if n_samples == 1
@@ -637,7 +677,7 @@ class MixedSignal:
         # if n_samples == 32
         # (1088, 100, 1) -> (32 * 1088, 100, 1) -> (34816, 100, 1)
         x, y = self.generate()
-        for i in range(n_msigs - 1):
+        for i in range(n_groups - 1):
             xi, yi = self.generate()
             x = np.vstack((x, xi))
             y = np.vstack((y, yi))
@@ -670,15 +710,15 @@ class MixedSignal:
             y.append(yi)
         return np.stack(X), np.stack(y)
 
-    def generator(self, n_msigs, batch_size, training=False):
-        x, y, indices, n_batches = self.generate_group(n_msigs)
+    def generator(self, n_samples, batch_size, training=False):
+        x, y, indices, n_batches = self.generate_group(n_samples)
         i = 0
         while True:
             # TODO: figure out how to use a threading lock with a data generator.
             # with self.lock:
             if i >= n_batches:
                 if training:
-                    x, y, indices, n_batches = self.generate_group(n_msigs)
+                    x, y, indices, n_batches = self.generate_group(n_samples)
                 i = 0
             idx = indices[i * batch_size:(i + 1) * batch_size]
             i += 1
