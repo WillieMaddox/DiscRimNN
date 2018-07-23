@@ -5,7 +5,7 @@ from distutils.dir_util import copy_tree
 from pytest import fixture
 import numpy as np
 from mixsig.mixed import MixedSignal
-from mixsig.utils import bits2shape
+from mixsig.utils import string2shape
 # class TestMixedSignal:
 #     def test___init__(self):
 #         msig = MixedSignal()
@@ -327,8 +327,8 @@ def test_generate_sliding(ic, oc):
         'c': n_classes,
     }
 
-    in_shape = bits2shape(ic, seq_bits)
-    out_shape = bits2shape(oc, seq_bits)
+    in_shape = string2shape(ic, seq_bits)
+    out_shape = string2shape(oc, seq_bits)
     sequence_code = '_'.join([ic, oc])
     X, y = msig.generate_sliding(sequence_code)
     assert X.shape == in_shape, print(sequence_code)
@@ -405,8 +405,8 @@ def test_generate_sliding_one2one(window_size, n_features, n_classes):
     }
 
     ic, oc = msig.sequence_code.split('_')
-    in_shape = bits2shape(ic, seq_bits)
-    out_shape = bits2shape(oc, seq_bits)
+    in_shape = string2shape(ic, seq_bits)
+    out_shape = string2shape(oc, seq_bits)
     assert X.shape == in_shape, print(msig.sequence_code)
     assert y.shape == out_shape, print(msig.sequence_code)
 
@@ -456,8 +456,8 @@ def test_generate_sliding_not_one2one(sequence_type, window_size, n_features, n_
     }
 
     ic, oc = msig.sequence_code.split('_')
-    in_shape = bits2shape(ic, seq_bits)
-    out_shape = bits2shape(oc, seq_bits)
+    in_shape = string2shape(ic, seq_bits)
+    out_shape = string2shape(oc, seq_bits)
     assert X.shape == in_shape, print(msig.sequence_code)
     assert y.shape == out_shape, print(msig.sequence_code)
 
