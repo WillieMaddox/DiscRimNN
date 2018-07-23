@@ -42,6 +42,7 @@ def setup_package():
                 'matplotlib',
                 'jupyter',
                 'jupyter_contrib_nbextensions',
+                'tensorflow',
                 'keras'
             ]
         },
