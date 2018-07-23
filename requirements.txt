@@ -4,4 +4,6 @@ matplotlib
 scikit-learn
 jupyter
 jupyter_contrib_nbextensions
+cudnn
+tensorflow
 keras
