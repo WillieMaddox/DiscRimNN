@@ -5,6 +5,7 @@ before_install:
   - pip install -U pip
 install:
   - pip install -r requirements.txt
+  - pip install tensorflow
   - pip install -r requirements-test.txt
 script:
   - coverage run --source=mixsig setup.py test
