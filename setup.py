@@ -36,7 +36,7 @@ def setup_package():
         long_description='',
         setup_requires=['pytest-runner'],
         install_requires=['numpy'],
-        extras_requires={
+        extras_require={
             'all': [
                 'pandas',
                 'matplotlib',

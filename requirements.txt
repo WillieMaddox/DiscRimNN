@@ -4,5 +4,4 @@ matplotlib
 scikit-learn
 jupyter
 jupyter_contrib_nbextensions
-tensorflow-gpu
 keras
