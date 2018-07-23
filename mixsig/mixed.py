@@ -712,20 +712,6 @@ class MixedSignal:
             y.append(yi)
         return np.stack(X), np.stack(y)
 
-    def generator(self, n_samples, batch_size, training=False):
-        x, y, indices, n_batches = self.generate_group(n_samples)
-        i = 0
-        while True:
-            # TODO: figure out how to use a threading lock with a data generator.
-            # with self.lock:
-            if i >= n_batches:
-                if training:
-                    x, y, indices, n_batches = self.generate_group(n_samples)
-                i = 0
-            idx = indices[i * batch_size:(i + 1) * batch_size]
-            i += 1
-            yield x[idx], y[idx]
-
     def save_config(self):
         os.makedirs(self.out_dir, exist_ok=True)
         with open(self.config_filename, 'w') as ofs:
