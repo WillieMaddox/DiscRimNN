@@ -2,9 +2,8 @@
     "run_label": "test",
     "window_size": 10,
     "window_type": "sliding",
-    "network_type": "RNN",
-    "sequence_type": "many2one",
-    "sequence_code": "xw1_xc",
+    "network_type": "TCN",
+    "sequence_type": "many2many",
     "sigs_coeffs": [
         {
             "amplitude": {

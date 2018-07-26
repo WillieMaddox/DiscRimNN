@@ -19,8 +19,8 @@ class MixedSignal:
                  batch_size=1,
                  window_size=0,
                  window_type='sliding',
-                 network_type='RNN',
-                 sequence_type='many2one',
+                 network_type='TCN',
+                 sequence_type='many2many',
                  classification_type='categorical',
                  stateful=False,
                  run_label=None,
@@ -104,7 +104,6 @@ class MixedSignal:
             'window_type': self.window_type,
             'network_type': self.network_type,
             'sequence_type': self.sequence_type,
-            'sequence_code': self.sequence_code,
             'sigs_coeffs': sigs_coeffs,
         }
 
