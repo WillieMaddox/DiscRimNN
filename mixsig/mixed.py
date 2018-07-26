@@ -161,8 +161,6 @@ class MixedSignal:
         self.inputs = inputs[sorted_indices]
 
         self.n_timestamps = len(self.timestamps)
-        self.t_min = self.timestamps[0]
-        self.t_max = self.timestamps[-1]
         if self._window_size is None:
             self.window_size = self.n_timestamps
 
