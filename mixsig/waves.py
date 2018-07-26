@@ -428,6 +428,7 @@ class MixedWave:
     @property
     def n_classes(self):
         return len(self.classes)
+
     @property
     def n_timestamps(self):
         return len(self.timestamps)

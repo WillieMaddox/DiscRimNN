@@ -48,8 +48,13 @@ class MixedSignal:
         self.one_hots = None
         self.mixed_signal = None
         self.n_timestamps = None
-        self._n_samples = None
-        self._window_size = None if window_size < 1 else window_size
+
+        if window_size < 1:
+            self._window_size = None
+            self._n_samples = 1
+        else:
+            self._window_size = window_size
+            self._n_samples = None
 
         self.window_type = window_type.lower()
         assert self.window_type in ('sliding', 'boxcar', 'random')
@@ -217,21 +222,6 @@ class MixedSignal:
                     self._n_samples = self.n_timestamps - self.window_size + 1
 
         return self._n_samples
-
-    @n_samples.setter
-    def n_samples(self, val):
-        if val == 0:
-            val = self.n_timestamps
-
-        if self.window_type == 'boxcar' and self.n_timestamps % val != 0:
-            raise ValueError('n_samples must divide n_timestamps evenly when using boxcar')
-
-        if val < 0 or val > self.n_timestamps:
-            raise ValueError('n_samples must be in the range [0, n_timestamps]')
-
-        if 1 <= val <= self.n_timestamps:
-            self._n_samples = val
-            self._window_size = None
 
     @property
     def window_size(self):
@@ -460,15 +450,14 @@ class MixedSignal:
 
             in_seq, out_seq = self.sequence_type.split('2')
             # sequence_type
-            st = {'one': {'t', 't0', 't1', 'x', 'x0', 'x1'}, 'many': {'1t', 'xw'}}
+            st = {'one': {'t0', 'x0'}, 'many': {'0t', 'xw'}}
 
-            if self.window_size == 0:
-                ws = {'1t'}
+            if self.window_size in (0, None, self.n_timestamps):
+                ws = {'0t'}
             elif self.window_size == 1:
-                ws = {'t', 't0', 't1'}
+                ws = {'t0'}
             else:
-                # ws = {'x', 'x0', 'x1', 'xw'}
-                ws = {'x', 'x0', 'xw'}
+                ws = {'x0', 'xw'}
 
             in_base = st[in_seq] & ws
             out_base = st[out_seq] & ws
@@ -477,24 +466,13 @@ class MixedSignal:
                 raise ValueError('Only with one2one can you use a window_size == 1')
 
             if self.n_features == 1:
-                n_feats = ('0', '1')
+                n_feats = ('1',)
             elif self.n_features >= 2:
                 n_feats = ('f',)
             else:
                 raise ValueError('n_features cannot be negative or zero')
 
             in_codes = [ib + nf for ib in in_base for nf in n_feats]
-            if 't10' in in_codes and 't01' in in_codes:
-                in_codes.remove('t01')
-            if 'x10' in in_codes and 'x01' in in_codes:
-                in_codes.remove('x01')
-            if 'tf' in in_codes and 't0f' in in_codes:
-                in_codes.remove('t0f')
-            if 'xf' in in_codes and 'x0f' in in_codes:
-                in_codes.remove('x0f')
-            in_codes = set([ic.strip('0') for ic in in_codes])
-            in_code = max(in_codes, key=lambda x: len(x))
-
 
             if self.n_classes == 1:
                 n_class = ('1',)
@@ -504,18 +482,20 @@ class MixedSignal:
                 raise ValueError('n_classes cannot be negative or zero')
 
             out_codes = [ob + nc for ob in out_base for nc in n_class]
-            if 't10' in out_codes and 't01' in out_codes:
-                out_codes.remove('t01')
-            if 'x10' in out_codes and 'x01' in out_codes:
-                out_codes.remove('x01')
-            if 'tc' in out_codes and 't0c' in out_codes:
-                out_codes.remove('t0c')
-            if 'xc' in out_codes and 'x0c' in out_codes:
-                out_codes.remove('x0c')
-            out_codes = set([oc.strip('0') for oc in out_codes])
-            out_code = max(out_codes, key=lambda x: len(x))
 
-            self._sequence_code = '_'.join([in_code, out_code])
+            in_codes1 = list(set([ic.replace('0', '') for ic in in_codes]))
+            out_codes1 = list(set([oc.replace('0', '') for oc in out_codes]))
+
+            if len(in_codes1) == 0:
+                raise ValueError('unable to determine input shape')
+            if len(in_codes1) > 1:
+                raise ValueError('more than one possible input shape detected.')
+            if len(out_codes1) == 0:
+                raise ValueError('unable to determine output shape')
+            if len(out_codes1) > 1:
+                raise ValueError('more than one possible output shape detected.')
+
+            self._sequence_code = '_'.join([in_codes1[0], out_codes1[0]])
 
         return self._sequence_code
 
@@ -533,83 +513,30 @@ class MixedSignal:
         sequence_code = sequence_code or self.sequence_code
         X_code, y_code = sequence_code.split('_')
 
-        if X_code in ('t', 't0', 't00', '0t0'):
-            X = self.mixed_signal
-        elif X_code in ('t1', 't01', 't10'):
-            X = self.mixed_signal[..., None]
-        elif X_code in ('1t', '1t0'):
-            X = self.mixed_signal[None, ...]
-        elif X_code in ('t11',):
-            X = self.mixed_signal[..., None, None]
-        elif X_code in ('1t1',):
-            X = self.mixed_signal[None, ..., None]
-        elif X_code in ('tf', '0tf', 't0f'):
+        if X_code in ('t1', 'tf'):
             X = self.inputs
-        elif X_code in ('t1f',):
-            X = self.inputs[:, None, :]
-        elif X_code in ('1tf',):
-            X = self.inputs[None, ...]
-
-        elif X_code in ('x', 'x0', 'x00'):
-            X = self.mixed_signal[self.window_size - 1:]
-        elif X_code in ('x1', 'x10', 'x01'):
-            X = self.mixed_signal[self.window_size - 1:, None]
-        elif X_code == 'x11':
-            X = self.mixed_signal[self.window_size - 1:, None, None]
-        elif X_code in ('xf', 'x0f'):
+        elif X_code in ('x1', 'xf'):
             X = self.inputs[self.window_size - 1:]
-        elif X_code == 'x1f':
-            X = self.inputs[self.window_size - 1:, None, :]
-        elif X_code in ('xw', 'xw0'):
-            X = np.zeros((self.n_samples, self.window_size))
-            for j in range(self.window_size):
-                X[:, j] = self.mixed_signal[j:j + self.n_samples]
-        elif X_code == 'xw1':
-            X = np.zeros((self.n_samples, self.window_size, 1))
-            for j in range(self.window_size):
-                X[:, j, 0] = self.mixed_signal[j:j + self.n_samples]
-        elif X_code == 'xwf':
+        elif X_code in ('xw1', 'xwf'):
             X = np.zeros((self.n_samples, self.window_size, self.n_features))
             for j in range(self.window_size):
                 X[:, j] = self.inputs[j:j + self.n_samples]
         else:
             raise NotImplementedError(X_code)
 
-        if y_code in ('t', 't0', 't00', '0t0'):
-            y = self.labels
-        elif y_code in ('t1', 't01', 't10'):
+        if y_code in ('t1',):
             y = self.labels[..., None]
-        elif y_code in ('1t', '1t0'):
-            y = self.labels[None, ...]
-        elif y_code in ('t11',):
-            y = self.labels[..., None, None]
-        elif y_code == '1t1':
-            y = self.labels[None, ..., None]
-        elif y_code in ('tc', '0tc', 't0c'):
-            y = self.one_hots
-        elif y_code == 't1c':
-            y = self.one_hots[:, None, :]
-        elif y_code == '1tc':
-            y = self.one_hots[None, ...]
-
-        elif y_code in ('x', 'x0', 'x00'):
-            y = self.labels[self.window_size - 1:]
-        elif y_code in ('x1', 'x01', 'x10'):
+        elif y_code in ('x1',):
             y = self.labels[self.window_size - 1:, None]
-        elif y_code == 'x11':
-            y = self.labels[self.window_size - 1:, None, None]
-        elif y_code in ('xc', 'x0c'):
-            y = self.one_hots[self.window_size - 1:]
-        elif y_code == 'x1c':
-            y = self.one_hots[self.window_size - 1:, None, :]
-        elif y_code in ('xw', 'xw0'):
-            y = np.zeros((self.n_samples, self.window_size))
-            for j in range(self.window_size):
-                y[:, j] = self.labels[j:j + self.n_samples]
         elif y_code == 'xw1':
             y = np.zeros((self.n_samples, self.window_size, 1))
             for j in range(self.window_size):
                 y[:, j, 0] = self.labels[j:j + self.n_samples]
+
+        elif y_code in ('tc',):
+            y = self.one_hots
+        elif y_code in ('xc',):
+            y = self.one_hots[self.window_size - 1:]
         elif y_code == 'xwc':
             y = np.zeros((self.n_samples, self.window_size, self.n_classes))
             for j in range(self.window_size):
@@ -626,8 +553,7 @@ class MixedSignal:
         # x -> n_samples (or sub-samples)
         # w -> [w]indow_size
         # c -> n_[c]lasses
-        # one2one   t_t     (1088,)        (1088,)  <- binary outputs
-        # one2one   t_tc    (1088,)        (1088, 3)
+        # one2one   t1_t1   (1088, 1)      (1088, 1)  <- binary outputs
         # one2one   t1_tc   (1088, 1)      (1088, 3)
         # many2one  xw_xc   (1088, 100)    (1088, 3)
         # many2one  xw1_xc  (1088, 100, 1) (1088, 3)
@@ -637,29 +563,43 @@ class MixedSignal:
         sequence_code = sequence_code or self.sequence_code
         X_code, y_code = sequence_code.split('_')
 
-        if X_code == 't':
-            X = self.mixed_signal
-        elif X_code == 't1':
-            X = self.mixed_signal[..., None]
-        elif X_code == 'xw':
-            X = self.mixed_signal.reshape((self.n_samples, self.window_size))
-        elif X_code == 'xw1':
-            X = self.mixed_signal.reshape((self.n_samples, self.window_size, 1))
+        if X_code in ('t1',):
+            X = self.inputs
+        elif X_code in ('x1',):
+            X = self.inputs.reshape((self.n_samples, self.window_size, self.n_features))
+            X = X[:, -1, :]
+            X = X.reshape(self.n_samples, self.n_features)
+        elif X_code in ('xw1',):
+            X = self.inputs.reshape((self.n_samples, self.window_size, self.n_features))
+        elif X_code in ('tf',):
+            X = self.inputs
+        elif X_code in ('xf',):
+            X = self.inputs.reshape((self.n_samples, self.window_size, self.n_features))
+            X = X[:, -1, :]
+            X = X.reshape(self.n_samples, self.n_features)
+        elif X_code in ('xwf',):
+            X = self.inputs.reshape((self.n_samples, self.window_size, self.n_features))
         else:
-            raise NotImplementedError
+            raise NotImplementedError(X_code)
 
-        if y_code == 't':
-            y = self.labels
-        elif y_code == 'tc':
+        if y_code in ('t1',):
+            y = self.labels[..., None]
+        elif y_code in ('x1',):
+            y = self.labels.reshape((self.n_samples, self.window_size, 1))
+            y = y[:, -1, :]
+            y = y.reshape(self.n_samples, 1)
+        elif y_code == 'xw1':
+            y = self.labels.reshape((self.n_samples, self.window_size, 1))
+        elif y_code in ('tc',):
             y = self.one_hots
-        elif y_code == 'xc':
+        elif y_code in ('xc',):
             y = self.one_hots.reshape((self.n_samples, self.window_size, self.n_classes))
             y = y[:, -1, :]
             y = y.reshape(self.n_samples, self.n_classes)
         elif y_code == 'xwc':
             y = self.one_hots.reshape((self.n_samples, self.window_size, self.n_classes))
         else:
-            raise NotImplementedError
+            raise NotImplementedError(y_code)
 
         return X, y
 
