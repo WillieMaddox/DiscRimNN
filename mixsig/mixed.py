@@ -604,11 +604,22 @@ class MixedSignal:
         return X, y
 
     def generate_groups(self, n_groups, shuffle_inplace=False):
-        # This is best suited for generating using the sliding window method.
+        # This is best suited for generating data when using
+        # the sliding window method, with
+        # 1 < window_size < n_timestamps, and
+        # network_type is any flavor of RNN.
+
+        # The shape of Xi and yi should be,
+        # Xi.shape == (n_samples, n_timestamps, n_features)
+        # yi.shape == (n_samples, n_timestamps, n_classes)
+        # and the final output shape should be,
+        # X.shape == (n_groups * n_samples, n_timestamps, n_features)
+        # y.shape == (n_groups * n_samples, n_timestamps, n_classes)
+
         # examples:
-        # if n_samples == 1
+        # if n_groups == 1
         # (1088, 100, 1) -> (1 * 1088, 100, 1) -> (1088, 100, 1)
-        # if n_samples == 32
+        # if n_groups == 32
         # (1088, 100, 1) -> (32 * 1088, 100, 1) -> (34816, 100, 1)
         x, y = self.generate()
         for i in range(n_groups - 1):
@@ -626,14 +637,17 @@ class MixedSignal:
             return x, y, indices, n_batches
 
     def generate_samples(self, n_samples, sequence_code=None):
-        # This is best suited for generating data where window_size == n_timestamps.
-        # examples:
-        # if n_samples == 0
-        # (1200, 1) -> (1200, 1)
-        # if n_samples == 1
-        # (1200, 1) -> (1, 1200, 1)
-        # if n_samples == 32
-        # (1200, 1) -> (32, 1200, 1)
+        # This is best suited for generating data where
+        # window_size == n_timestamps.
+        # and when using TCN's.
+
+        # The shape of Xi and yi should be,
+        # Xi.shape == (n_timestamps, n_features)
+        # yi.shape == (n_timestamps, n_classes)
+        # and the final output shape should be,
+        # X.shape == (n_samples, n_timestamps, n_features)
+        # y.shape == (n_samples, n_timestamps, n_classes)
+
         if n_samples < 1:
             raise ValueError('n_samples must be >= 1')
         X = []
