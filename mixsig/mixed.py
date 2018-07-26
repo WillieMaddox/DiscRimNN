@@ -21,7 +21,6 @@ class MixedSignal:
                  window_type='sliding',
                  network_type='TCN',
                  sequence_type='many2many',
-                 classification_type='categorical',
                  stateful=False,
                  run_label=None,
                  n_groups=5,
@@ -94,7 +93,7 @@ class MixedSignal:
         self.waves = [Wave(*self.features, label=i, **coeffs) for i, coeffs in enumerate(sigs_coeffs)]
         self.n_classes = len(self.waves)
 
-        self.classification_type = 'categorical' if self.n_classes > 2 else classification_type
+        self.classification_type = 'binary' if self.n_classes == 1 else 'categorical'
 
         run_label = run_label or get_datetime_now(fmt='%Y_%m%d_%H%M')
 
@@ -496,17 +495,13 @@ class MixedSignal:
             in_codes = set([ic.strip('0') for ic in in_codes])
             in_code = max(in_codes, key=lambda x: len(x))
 
-            if self.n_classes == 2:
-                if self.classification_type == 'binary':
-                    n_class = ('0', '1')
-                elif self.classification_type == 'categorical':
-                    n_class = ('c',)
-                else:
-                    raise ValueError(f'incorrect classification_type {self.classification_type}')
-            elif self.n_classes >= 3:
+
+            if self.n_classes == 1:
+                n_class = ('1',)
+            elif self.n_classes >= 2:
                 n_class = ('c',)
             else:
-                raise ValueError('n_classes must be 2 or greater')
+                raise ValueError('n_classes cannot be negative or zero')
 
             out_codes = [ob + nc for ob in out_base for nc in n_class]
             if 't10' in out_codes and 't01' in out_codes:
