@@ -546,9 +546,11 @@ class MixedSignal:
 
         # TODO: Need unit tests to make sure all these pathways are correct.
         # sequence_types
-        # x -> n_samples (or sub-samples)
-        # w -> [w]indow_size
-        # c -> n_[c]lasses
+        # t -> n_`t`imestamps
+        # x -> n_samples (e`x`amples, sub-samples, etc.)
+        # w -> `w`indow_size
+        # c -> n_`c`lasses
+        # f -> n_`f`eatures
         # one2one   t1_t1   (1088, 1)      (1088, 1)  <- binary outputs
         # one2one   t1_tc   (1088, 1)      (1088, 3)
         # many2one  xw_xc   (1088, 100)    (1088, 3)
