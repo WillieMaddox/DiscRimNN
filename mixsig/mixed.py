@@ -23,12 +23,8 @@ class MixedSignal:
                  sequence_type='many2many',
                  stateful=False,
                  run_label=None,
-                 n_groups=5,
                  name='Mixed'):
 
-        self.group_index = 0
-        self.group_indices = None
-        self.n_groups = n_groups
 
         self.features = features or ('x',)
         self.n_features = len(self.features)
@@ -602,39 +598,6 @@ class MixedSignal:
             raise NotImplementedError(y_code)
 
         return X, y
-
-    def generate_groups(self, n_groups, shuffle_inplace=False):
-        # This is best suited for generating data when using
-        # the sliding window method, with
-        # 1 < window_size < n_timestamps, and
-        # network_type is any flavor of RNN.
-
-        # The shape of Xi and yi should be,
-        # Xi.shape == (n_samples, n_timestamps, n_features)
-        # yi.shape == (n_samples, n_timestamps, n_classes)
-        # and the final output shape should be,
-        # X.shape == (n_groups * n_samples, n_timestamps, n_features)
-        # y.shape == (n_groups * n_samples, n_timestamps, n_classes)
-
-        # examples:
-        # if n_groups == 1
-        # (1088, 100, 1) -> (1 * 1088, 100, 1) -> (1088, 100, 1)
-        # if n_groups == 32
-        # (1088, 100, 1) -> (32 * 1088, 100, 1) -> (34816, 100, 1)
-        x, y = self.generate()
-        for i in range(n_groups - 1):
-            xi, yi = self.generate()
-            x = np.vstack((x, xi))
-            y = np.vstack((y, yi))
-        n_samples = len(x)
-        n_batches = n_samples // self.batch_size
-        indices = np.arange(n_samples)
-        np.random.shuffle(indices)
-
-        if shuffle_inplace:
-            return x[indices], y[indices]
-        else:
-            return x, y, indices, n_batches
 
     def generate_samples(self, n_samples, sequence_code=None):
         # This is best suited for generating data where
