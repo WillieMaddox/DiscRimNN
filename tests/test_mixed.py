@@ -619,15 +619,15 @@ def test_generate_config(datadir):
         window_type='sliding',
         run_label='test'
     )
-    truth_filename = datadir('mixed_signal_config.json')
+    truth_filename = datadir('data_config.json')
     with open(truth_filename, 'rb') as ifs:
-        signal_config_truth = json.load(ifs)
+        data_config_truth = json.load(ifs)
 
     msig.save_config()
-    with open(msig.config_filename, 'rb') as ifs:
-        signal_config_test = json.load(ifs)
+    with open(msig.data_config_filename, 'rb') as ifs:
+        data_config_test = json.load(ifs)
 
-    assert signal_config_truth == signal_config_test
+    assert data_config_truth == data_config_test
 
 
 def test_sequence_code_errors():

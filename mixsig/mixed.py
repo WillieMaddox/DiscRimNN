@@ -98,7 +98,7 @@ class MixedSignal:
 
         run_label = run_label or get_datetime_now(fmt='%Y_%m%d_%H%M')
 
-        self.config_dict = {
+        self.data_config = {
             'run_label': run_label,
             'window_size': self._window_size,
             'window_type': self.window_type,
@@ -113,7 +113,7 @@ class MixedSignal:
         # TODO: Relative to the directory of this module?
         self.out_dir = os.path.join(os.getcwd(), 'out', run_label)
         self.model_filename = os.path.join(self.out_dir, 'model.h5')
-        self.config_filename = os.path.join(self.out_dir, 'mixed_signal_config.json')
+        self.data_config_filename = os.path.join(self.out_dir, 'data_config.json')
         self.model_weights_filename = os.path.join(self.out_dir, 'model_weights.h5')
         self.training_stats_filename = os.path.join(self.out_dir, 'training_stats.csv')
 
@@ -623,8 +623,8 @@ class MixedSignal:
 
     def save_config(self):
         os.makedirs(self.out_dir, exist_ok=True)
-        with open(self.config_filename, 'w') as ofs:
-            json.dump(self.config_dict, ofs, indent=4)
+        with open(self.data_config_filename, 'w') as ofs:
+            json.dump(self.data_config, ofs, indent=4)
 
 
 class SignalGenerator(Sequence):
