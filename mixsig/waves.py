@@ -18,25 +18,38 @@ WaveProps = namedtuple('WaveProps', 'a w o p')
 class WaveProperty:
 
     def __init__(self, mean=None, delta=None):
-        self.value = 0.0 if mean is None else float(mean)
+        self.mean = 0.0 if mean is None else float(mean)
         self.delta = 0.0 if delta is None else float(delta)
 
         if isclose(self.delta, 0, abs_tol=1e-9):
-            self.generate = lambda: self.value
+            self.generate = lambda: self.mean
         else:
-            self.generate = self._generator(self.delta)
+            self.generate = self._generator(self.mean, self.delta)
+
+        self.value = self.generate()
 
     def __call__(self, **kwargs) -> float:
         self.value = self.generate()
         return self.value
 
-    def _generator(self, delta):
-        def inner():
-            return self + (2 * np.random.random() - 1) * delta  # i.e. np.random.uniform(self - delta, self + delta)
-        return inner
+    def _generator(self, mean, delta):
+        """
+        np.random.uniform(mean - delta, mean + delta) ==
+        mean + (2 * np.random.random() - 1) * delta ==
+        a x + b, where a = 2.0 * delta and b = mean - delta
 
-    # def __repr__(self):
-    #     return f'WaveProperty(mean={self.value}, delta={self.delta})'
+        :param mean: midpoint of a uniform distribution
+        :param delta: allowable distance from the mean from which to sample.
+        :return: a closure
+        """
+        # a = 2.0 * delta
+        # b = mean - delta
+        lo, hi = mean - delta, mean + delta
+
+        def inner():
+            # return a * np.random.random() + b
+            return np.random.uniform(lo, hi)
+        return inner
 
     def __repr__(self):
         return f'{self.value}'
@@ -77,16 +90,6 @@ class Amplitude(WaveProperty):
         self.value = self.generate()
         return self.value * amplitude
 
-    def _generator(self, delta):
-        a_min, a_max = self.value - delta, self.value + delta
-
-        def inner():
-            return np.random.uniform(a_min, a_max)
-        return inner
-
-    # def __repr__(self):
-    #     return f'Amplitude(mean={self.value}, delta={self.delta})'
-
 
 class Frequency(WaveProperty):
 
@@ -98,15 +101,6 @@ class Frequency(WaveProperty):
         self.value = self.generate()
         return self.value * frequency
 
-    def _generator(self, delta):
-        f_min, f_max = self.value - delta, self.value + delta
-
-        def inner():
-            # This distribution breaks when self.value == delta.
-            # return 1. / np.random.uniform(1. / f_max, 1. / f_min)
-            return np.random.uniform(f_max, f_min)
-        return inner
-
 
 class Offset(WaveProperty):
 
@@ -114,24 +108,17 @@ class Offset(WaveProperty):
         self.value = self.generate()
         return self.value + offset
 
-    def _generator(self, delta):
-        b_min, b_max = self.value - delta, self.value + delta
-
-        def inner():
-            return np.random.uniform(b_min, b_max)
-        return inner
-
 
 class Phase(WaveProperty):
+
+    def _generator(self, mean, delta):
+        def inner():
+            return np.random.random()  # later on this will be scaled by 2*pi
+        return inner
 
     def __call__(self, phase=0, **kwargs) -> float:
         self.value = self.generate()
         return self.value + phase
-
-    def _generator(self, delta):
-        def inner():
-            return np.random.random()  # later on this will be scaled by 2*pi
-        return inner
 
 
 class Wave:
