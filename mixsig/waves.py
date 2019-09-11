@@ -1,5 +1,6 @@
 import numbers
 from collections import namedtuple
+from functools import total_ordering
 from math import isclose
 import numpy as np
 from .utils import name_generator
@@ -13,6 +14,7 @@ from .utils import generate_labels
 WaveProps = namedtuple('WaveProps', 'a w o p')
 
 
+@total_ordering
 class WaveProperty:
 
     def __init__(self, mean=None, delta=None):
@@ -39,65 +41,30 @@ class WaveProperty:
     def __repr__(self):
         return f'{self.value}'
 
-    def __add__(self, other):
+    def _get_value(self, other):
         if isinstance(other, self.__class__):
-            return self.value + other.value
-        elif isinstance(other, numbers.Real):
-            return self.value + other
-        else:
-            raise NotImplemented
+            return other.value
+        if isinstance(other, numbers.Real):
+            return other
+        raise TypeError('Incompatible types.')
+
+    def __add__(self, other):
+        return self.value + self._get_value(other)
 
     def __radd__(self, other):
-        if isinstance(other, numbers.Real):
-            return other + self.value
-        else:
-            raise TypeError(f'Can only add values of type {numbers.Real}, not of type {type(other)}')
+        return self._get_value(other) + self.value
 
     def __mul__(self, other):
-        if isinstance(other, self.__class__):
-            return self.value * other.value
-        elif isinstance(other, numbers.Real):
-            return self.value * other
-        else:
-            raise NotImplemented
+        return self.value * self._get_value(other)
 
     def __rmul__(self, other):
-        if isinstance(other, numbers.Real):
-            return other * self.value
-        else:
-            raise TypeError(f'Can only multiply values of type {numbers.Real}, not of type {type(other)}')
+        return self._get_value(other) * self.value
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.value == other.value
-        elif isinstance(other, numbers.Real):
-            return self.value == other
-        else:
-            raise NotImplemented
-
-    def __ne__(self, other):
-        if isinstance(other, self.__class__):
-            return self.value != other.value
-        elif isinstance(other, numbers.Real):
-            return self.value != other
-        else:
-            raise NotImplemented
-
-    def __gt__(self, other):
-        if isinstance(other, self.__class__):
-            return self.value > other.value
-        elif isinstance(other, numbers.Real):
-            return self.value > other
-        else:
-            raise NotImplemented
+        return self.value == self._get_value(other)
 
     def __lt__(self, other):
-        if isinstance(other, self.__class__):
-            return self.value < other.value
-        elif isinstance(other, numbers.Real):
-            return self.value < other
-        else:
-            raise NotImplemented
+        return self.value < self._get_value(other)
 
 
 class Amplitude(WaveProperty):

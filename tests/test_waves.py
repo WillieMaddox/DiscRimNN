@@ -17,8 +17,8 @@ waveproperty = st.builds(
     WaveProperty,
     mean=st.one_of(
         st.none(),
-        st.integers(min_value=1e-13, max_value=1e13),
-        st.floats(min_value=1e-13, max_value=1e13, allow_infinity=False, allow_nan=False)
+        st.integers(min_value=0, max_value=1e7),
+        st.floats(min_value=0, max_value=1e7, allow_infinity=False, allow_nan=False)
     ),
     delta=st.one_of(
         st.none(),
